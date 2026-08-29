@@ -1,4 +1,4 @@
-# agents
+# Agents :: Diretrizes padrão para IAs e agentes
 
 Minha base pessoal para trabalhar com assistentes de IA e agentes de código.
 
