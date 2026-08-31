@@ -18,6 +18,7 @@ agents/
 ├── wire.sh
 ├── adopt.sh
 ├── templates/
+│   ├── README.md
 │   ├── AGENTS.project.md
 │   ├── PROJECT_MEMORY.md
 │   └── DECISION.md
@@ -60,6 +61,15 @@ Quando houver conflito:
 2. regras específicas do projeto
 3. preferências pessoais deste repositório
 4. convenções da ferramenta
+
+## Idioma
+
+Cada camada tem um idioma fixo:
+
+- **Português**: este `README.md` e `reference/`. São material meu e para leitura humana.
+- **Inglês**: `AGENTS.md` e `templates/`. São artefatos que vivem dentro de repositórios de código, junto com commits, identificadores e documentação técnica.
+
+A regra que os agentes seguem é a mesma: falam comigo em português, escrevem código e artefatos técnicos em inglês.
 
 ## Escopo
 
