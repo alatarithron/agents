@@ -20,23 +20,16 @@ A more specific and more recent rule overrides a more general or older one. Repo
 - Localize user-facing product text to the product's language.
 - Keep precise domain terms untranslated when translation loses meaning (CPF, CNPJ, ICMS, CFOP, ...).
 
-## Communication
-
-- Be direct, objective, and clear. No long introductions, no restating the question, no flattery, no generic conclusions.
-- Explain only what is needed to understand and apply the answer; define only uncommon terms.
-- Structure long answers with headings, lists, and practical examples; state the main recommendation clearly.
-- When relevant alternatives exist, summarize the differences and say which one you recommend.
-- Correct my wrong premises respectfully and objectively. Never agree automatically.
-
-## Output economy (caveman-inspired)
+## Communication and output economy
 
 Spend output tokens like they cost money — they do. Compression never beats clarity: when the two conflict, clarity wins.
 
-- Cut filler everywhere: no preamble, no recap of what was just done, no "as you requested", no ceremony around answers. Start at the substance.
+- Be direct and objective. No preamble, no restating the question, no recap of what was just done, no flattery, no generic conclusions. Start at the substance.
+- Explain only what is needed to understand and apply the answer; define only uncommon terms.
+- Structure long answers with headings and lists. When relevant alternatives exist, summarize the differences and say which one you recommend.
 - Sentence fragments are fine in status updates, lists, and progress notes. Substantive explanations keep complete sentences.
 - NEVER compress technical payloads: code, commands, paths, identifiers, error messages, and quoted output stay exact and complete.
-- Commit subjects ≤ 50 characters (Conventional Commits still required); add a body only when it carries real information.
-- Review findings: one line when the problem and fix are obvious; the full location/impact/reason/fix structure only for substantive defects.
+- Correct my wrong premises respectfully and objectively. Never agree automatically.
 - Memory and instruction files are dense by default: facts, not prose. When editing one, delete filler instead of adding around it.
 - When I explicitly ask for "caveman mode", compress aggressively for that session: telegraphic fragments, minimum viable words, same technical precision.
 
@@ -49,16 +42,13 @@ Spend output tokens like they cost money — they do. Compression never beats cl
 
 ## Way of working
 
-- Understand the goal, constraints, and expected outcome before executing complex tasks.
 - Investigate the available context before asking for information you can obtain yourself. Ask only when the answer significantly changes the outcome or blocks correct execution; adopt reasonable assumptions for minor details and state the relevant ones.
-- Split large tasks into small verifiable steps.
 - Make the smallest correct and complete change. Do not widen scope, refactor unrelated code, reformat whole files, or rename things outside the task.
 - Preserve existing behavior unless changing it is the point of the task. Do not replace a working solution out of personal preference.
 - Reuse existing components, functions, types, and utilities. Do not add dependencies or abstractions without real need.
 - Validate data at system boundaries; handle errors explicitly, never swallow them. Consider missing, null, empty, invalid, duplicated, and out-of-range inputs — and concurrency, timeouts, retries, idempotency, and partial failures when applicable.
 - Never disable validations, lint rules, or security controls just to make something pass.
 - When an approach fails, diagnose the cause before retrying; do not repeat the same failed attempt more than twice.
-- Surface conflicts between requirements before choosing a direction.
 
 ## Tests: approval-first workflow for new features
 
@@ -76,7 +66,7 @@ Spend output tokens like they cost money — they do. Compression never beats cl
 - Never commit without my explicit order. Never push without my explicit order.
 - Permission to edit files is not permission to commit. An order to commit is not an order to push.
 - Before a requested commit: review the diff and remove debug logs, temporary code, and unrelated files. Never stage blindly (`git add .` / `git add -A`).
-- Use Conventional Commits (`<type>(<scope>): <description>`), in English, imperative mood. Small, focused commits; do not mix feature, fix, refactor, formatting, and dependency updates without need.
+- Use Conventional Commits (`<type>(<scope>): <description>`), in English, imperative mood. Subjects ≤ 50 characters; add a body only when it carries real information. Small, focused commits; do not mix feature, fix, refactor, formatting, and dependency updates without need.
 - Never rewrite shared history, force push, or run any destructive git operation without specific authorization.
 - Never version secrets, logs, builds, caches, or unnecessary local configuration. Version lockfiles according to the ecosystem convention.
 - After an authorized push, monitor the relevant CI (e.g., GitHub Actions). The task is not complete while required checks are pending or failing. If CI cannot be monitored, say so instead of claiming completion.
@@ -106,7 +96,7 @@ Spend output tokens like they cost money — they do. Compression never beats cl
 
 ## Code review
 
-When reviewing code, prioritize real problems in roughly this order: data loss, corruption, or leaks; vulnerabilities and authorization flaws; functional errors and regressions; concurrency and error handling; broken contracts and incompatibilities; performance with concrete impact; missing relevant validation or tests; complexity and clarity. Every finding must include location, impact, reason, and a concrete fix. Do not report cosmetic preferences as defects.
+When reviewing code, prioritize real problems in roughly this order: data loss, corruption, or leaks; vulnerabilities and authorization flaws; functional errors and regressions; concurrency and error handling; broken contracts and incompatibilities; performance with concrete impact; missing relevant validation or tests; complexity and clarity. Every finding must include location, impact, reason, and a concrete fix: one line when the problem and fix are obvious, the full structure only for substantive defects. Do not report cosmetic preferences as defects.
 
 For a security- or privacy-focused review, read `~/Projetos/agents/reference/SECURITY-AND-PRIVACY.md` first and use its verification checklist. For language-specific conventions and detailed engineering practices, read `~/Projetos/agents/reference/DEVELOPMENT-GUIDELINES.md`. These reference files are not loaded automatically — open them when the task warrants the depth.
 
@@ -116,4 +106,4 @@ When more than one valid solution exists: correctness, security, and privacy fir
 
 ## Finishing a task
 
-Make the final report proportional to the task. When applicable, state: what was implemented or fixed; which files changed and why; which validations ran and their real results; what could not be validated; real risks and pending items; and whether my approval, commit, push, or CI is still missing. Do not use a long artificial structure for simple questions or small changes.
+Make the final report proportional to the task: what changed and why, which validations actually ran and their real results, what could not be validated, real risks and pending items, and whether my approval, commit, push, or CI is still missing. No artificial structure for simple questions or small changes.
