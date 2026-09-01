@@ -71,3 +71,16 @@ Replace this section with actual project details and remove all placeholders:
 - Type-check command:
 - Build command:
 - Compatibility requirements:
+
+Add a line for anything an agent would otherwise get wrong: a required commit identity, a check that is knowingly not clean today, a command that must not be run while another is up.
+
+## Repository-specific rules
+
+Hard rules this repository imposes on top of everything above. Not information — prohibitions and obligations, each one a thing that breaks if ignored. Replace these examples with the project's own and delete the section if it has none:
+
+- The invariant a change must never violate, and what to do instead when the task seems to require it.
+- Where secrets, keys, or credentials live in this project, and where they must never end up.
+- The concurrency, transaction, or I/O rule that is not visible from the code being edited.
+- The security boundary that must not be relaxed (sandbox, CSP, sanitizer, permission check).
+- The question to ask before a new feature, when the project has a scope boundary worth defending.
+- Where architectural decisions are recorded, and the obligation to record new ones.
