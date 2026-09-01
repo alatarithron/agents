@@ -17,6 +17,7 @@ agents/
 ├── AGENTS.md
 ├── wire.sh
 ├── adopt.sh
+├── check.sh
 ├── templates/
 │   ├── README.md
 │   ├── AGENTS.project.md
@@ -53,6 +54,16 @@ Esse script prepara um repositório para seguir a mesma estrutura, criando:
 - `.agents/decisions/`
 
 Sem sobrescrever o que já existe.
+
+### 3. Verificação
+
+```bash
+./check.sh <caminho-do-projeto>
+```
+
+Confere um projeto adotado contra a política: estrutura no lugar, placeholders do template já preenchidos, entradas de memória dentro do limite de forma, decisões cruzadas com a memória (sem órfãs nem links quebrados), baseline de teste com data, e nenhuma string com cara de credencial nos arquivos de instrução.
+
+Somente leitura — reporta, nunca edita. Sai com 1 em erro, 0 em aviso. Os limites de tamanho podem ser ajustados: `MEM_WARN=400 MEM_FAIL=1200 ./check.sh <projeto>`.
 
 ## Prioridade das instruções
 

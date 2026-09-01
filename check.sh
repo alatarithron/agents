@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+# Checks a project's agent-instruction files against the policy.
+# Read-only: reports, never edits. Exit 1 on error, 0 on warnings only.
+#
+#   ./check.sh <project-dir>
+#
+# Thresholds can be overridden:
+#   MEM_WARN=400 MEM_FAIL=1200 ./check.sh <project-dir>
+set -euo pipefail
+
+DEST="${1:?usage: check.sh <project-dir>}"
+DEST="$(cd "$DEST" && pwd)"
+MEM_WARN="${MEM_WARN:-400}"
+MEM_FAIL="${MEM_FAIL:-1200}"
+
+errors=0
+warnings=0
+
+indent() { while IFS= read -r l; do [ -n "$l" ] && printf '        %s\n' "$l"; done; }
+err()  { echo "FAIL: $*"; errors=$((errors + 1)); }
+warn() { echo "WARN: $*"; warnings=$((warnings + 1)); }
+ok()   { echo "ok:   $*"; }
+
+AGENTS="$DEST/AGENTS.md"
+MEM="$DEST/.agents/PROJECT_MEMORY.md"
+DECISIONS="$DEST/.agents/decisions"
+
+# --- structure ---------------------------------------------------------------
+[ -f "$AGENTS" ] || err "missing $AGENTS"
+[ -f "$MEM" ]    || err "missing $MEM"
+[ -d "$DECISIONS" ] || warn "missing $DECISIONS (no decision records yet)"
+
+if [ -f "$DEST/.gitignore" ] && grep -Eq '(^|/)\.agents' "$DEST/.gitignore"; then
+  err ".agents is in .gitignore — the memory must be versioned"
+fi
+
+[ "$errors" -eq 0 ] || { echo; echo "$errors error(s), $warnings warning(s)"; exit 1; }
+
+# --- placeholders left behind ------------------------------------------------
+if grep -qE '^- (Purpose|Architecture|Install command|Run command|Test command):\s*$' "$AGENTS"; then
+  err "$AGENTS still has empty placeholders from the template"
+else
+  ok "AGENTS.md has no empty template placeholders"
+fi
+
+if grep -q 'Replace this section with actual project details' "$AGENTS"; then
+  warn "$AGENTS still carries the template's instruction line"
+fi
+
+# --- entry form (policy: one fact with a pointer, ~300 chars) ----------------
+long_warn=$(awk -v n="$MEM_WARN" 'length($0) > n' "$MEM" | wc -l)
+long_fail=$(awk -v n="$MEM_FAIL" 'length($0) > n' "$MEM" | wc -l)
+
+if [ "$long_fail" -gt 0 ]; then
+  err "$long_fail memory line(s) over $MEM_FAIL chars — split into decisions/ or module docs"
+  awk -v n="$MEM_FAIL" 'length($0) > n {printf "        line %d: %d chars | %.60s...\n", NR, length($0), $0}' "$MEM"
+elif [ "$long_warn" -gt 0 ]; then
+  warn "$long_warn memory line(s) over $MEM_WARN chars"
+else
+  ok "every memory entry is within $MEM_WARN chars"
+fi
+
+# --- decision records: referential integrity ---------------------------------
+if [ -d "$DECISIONS" ]; then
+  files=$(find "$DECISIONS" -maxdepth 1 -name '*.md' -printf '%f\n' | sed 's/\.md$//' | sort)
+  linked=$(grep -oE 'decisions/[0-9]{3}-[a-z0-9-]+\.md' "$MEM" | sed 's|decisions/||;s|\.md$||' | sort -u)
+
+  orphans=$(comm -23 <(echo "$files") <(echo "$linked") | grep -v '^$' || true)
+  broken=$(comm -13 <(echo "$files") <(echo "$linked") | grep -v '^$' || true)
+
+  if [ -n "$broken" ]; then
+    err "memory links to decision records that do not exist:"
+    echo "$broken" | indent
+  fi
+  if [ -n "$orphans" ]; then
+    warn "decision records never referenced from the memory:"
+    echo "$orphans" | indent
+  fi
+  [ -z "$broken$orphans" ] && ok "$(echo "$files" | grep -c .) decision record(s), all cross-referenced"
+
+  # a record without Status/Date is not usable later
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    grep -q '^- Status:' "$DECISIONS/$f.md" || warn "$f.md has no Status line"
+    grep -q '^- Date:'   "$DECISIONS/$f.md" || warn "$f.md has no Date line"
+  done <<< "$files"
+fi
+
+# --- baselines must carry a date (policy: baseline vs run result) ------------
+if grep -qiE '(tests? (green|passing)|testes verdes|[0-9]+ (tests?|testes))' "$MEM"; then
+  if grep -qiE '(verified|verificado)[^.]{0,40}20[0-9]{2}-[0-9]{2}-[0-9]{2}' "$MEM"; then
+    ok "test baseline carries a verification date"
+  else
+    warn "the memory states a test count without a verification date — a baseline without a date is a run result"
+  fi
+fi
+
+# --- secrets -----------------------------------------------------------------
+if grep -rInE '(password|secret|api[_-]?key|token)\s*[:=]\s*["'"'"'][^"'"'"']{8,}' "$AGENTS" "$MEM" >/dev/null 2>&1; then
+  err "possible credential in AGENTS.md or PROJECT_MEMORY.md"
+else
+  ok "no credential-shaped strings in the instruction files"
+fi
+
+echo
+if [ "$errors" -gt 0 ]; then
+  echo "$errors error(s), $warnings warning(s)"
+  exit 1
+fi
+echo "passed with $warnings warning(s)"
