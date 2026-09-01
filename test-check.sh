@@ -121,6 +121,18 @@ p="$(fixture)"; printf -- 'api_key = "hunter2hunter2"\n' >> "$p/.agents/PROJECT_
 expect "credential in the memory" 1 "possible credential"
 
 p="$(fixture)"
+cat >> "$p/.agents/PROJECT_MEMORY.md" <<'ENTRY'
+- The list has a filter popover, a sort popover, hover quick actions on each row, an avatar checkbox for multi-select, a chip on every card and a button in the footer.
+ENTRY
+expect "entry that is UI inventory" 0 "feature inventory"
+
+p="$(fixture)"
+cat >> "$p/.agents/PROJECT_MEMORY.md" <<'ENTRY'
+- Never do network I/O while holding the DB lock; every batch op refuses a mix of accounts before touching the cache.
+ENTRY
+expect "invariant is not mistaken for inventory" 0 "passed with 0 warning"
+
+p="$(fixture)"
 printf -- '- %s\n' "$(head -c 200 /dev/zero | tr '\0' 'x')" >> "$p/.agents/PROJECT_MEMORY.md"
 CASES=$((CASES + 1))
 # Captured, not piped: check.sh exits 1 here, and under `pipefail` a pipeline

@@ -60,6 +60,26 @@ else
   ok "every memory entry is within $MEM_WARN chars"
 fi
 
+# --- feature inventory (policy: what the UI does today is read from the code) -
+# Heuristic and deliberately conservative: an entry naming several interface
+# widgets at once is describing what the screen has, not what is true about the
+# project. It warns, never fails — only a reader can tell the two apart.
+inventory=$(awk '
+  {
+    line = tolower($0)
+    n = 0
+    split("popover tooltip chevron checkbox dropdown hover click drag chip badge button toolbar sidebar modal placeholder scrollbar", w, " ")
+    for (i in w) if (index(line, w[i]) > 0) n++
+    if (n >= 4) printf "        line %d: %d widget words | %.60s...\n", NR, n, $0
+  }' "$MEM")
+
+if [ -n "$inventory" ]; then
+  warn "$(printf '%s' "$inventory" | grep -c .) entry/entries read like feature inventory — what the UI has today is read from the code, not the memory"
+  printf '%s\n' "$inventory"
+else
+  ok "no entry reads like feature inventory"
+fi
+
 # --- decision records: referential integrity ---------------------------------
 if [ -d "$DECISIONS" ]; then
   files=$(find "$DECISIONS" -maxdepth 1 -name '*.md' -printf '%f\n' | sed 's/\.md$//' | sort)
