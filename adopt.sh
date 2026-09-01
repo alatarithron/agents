@@ -7,12 +7,15 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEST="${1:?usage: adopt.sh <project-dir>}"
 DEST="$(cd "$DEST" && pwd)"
 
+created_any=0
+
 copy() {
   local src="$1" dst="$2"
   if [ -e "$dst" ]; then
     echo "SKIP (exists): $dst"
   else
     cp "$src" "$dst"
+    created_any=1
     echo "created: $dst"
   fi
 }
@@ -25,6 +28,7 @@ if [ -e "$DEST/CLAUDE.md" ] || [ -L "$DEST/CLAUDE.md" ]; then
   echo "SKIP (exists): $DEST/CLAUDE.md"
 else
   ln -s AGENTS.md "$DEST/CLAUDE.md"
+  created_any=1
   echo "linked:  $DEST/CLAUDE.md -> AGENTS.md"
 fi
 
@@ -32,6 +36,10 @@ if [ -f "$DEST/.gitignore" ] && grep -Eq '(^|/)\.agents' "$DEST/.gitignore"; the
   echo "WARNING: .agents appears in $DEST/.gitignore — remove it so the memory is versioned."
 fi
 
-echo "done. Now fill in:"
-echo "  - $DEST/AGENTS.md (Repository-specific information; remove placeholders)"
-echo "  - $DEST/.agents/PROJECT_MEMORY.md (verified facts only)"
+if [ "$created_any" -eq 1 ]; then
+  echo "done. Now fill in:"
+  echo "  - $DEST/AGENTS.md (Repository-specific information and rules; remove placeholders)"
+  echo "  - $DEST/.agents/PROJECT_MEMORY.md (verified facts only)"
+else
+  echo "done. Nothing to create — this project is already adopted."
+fi
