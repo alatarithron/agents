@@ -18,6 +18,7 @@ agents/
 ├── wire.sh
 ├── adopt.sh
 ├── check.sh
+├── test-check.sh
 ├── templates/
 │   ├── README.md
 │   ├── AGENTS.project.md
@@ -64,6 +65,14 @@ Sem sobrescrever o que já existe.
 Confere um projeto adotado contra a política: estrutura no lugar, placeholders do template já preenchidos, entradas de memória dentro do limite de forma, decisões cruzadas com a memória (sem órfãs nem links quebrados), baseline de teste com data, e nenhuma string com cara de credencial nos arquivos de instrução.
 
 Somente leitura — reporta, nunca edita. Sai com 1 em erro, 0 em aviso. Os limites de tamanho podem ser ajustados: `MEM_WARN=400 MEM_FAIL=1200 ./check.sh <projeto>`.
+
+```bash
+./test-check.sh
+```
+
+Cada caso monta um projeto de mentira, quebra exatamente uma coisa e exige que o `check.sh` reporte — mais um caso que não quebra nada e exige silêncio. Um check que para de ler continua imprimindo `ok`, e isso é indistinguível de um check que funciona.
+
+Verificado em 2026-08-31, bash 5.3: `./test-check.sh` (14 casos, todos passando); `shellcheck` limpo em `wire.sh`, `adopt.sh`, `check.sh` e `test-check.sh`. Nos projetos adotados: `nightjar` passa (23 avisos de forma), `astr` falha (8 entradas acima do limite, a maior com 6.339 caracteres) e este repositório falha porque não é ele mesmo um projeto adotado — tem o `AGENTS.md` canônico, que é outra coisa, e não tem `.agents/`.
 
 ## Prioridade das instruções
 
