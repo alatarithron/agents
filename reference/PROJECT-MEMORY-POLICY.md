@@ -44,6 +44,16 @@ Registrar fatos estáveis que reduzam a necessidade de redescoberta:
 
 Escrever fatos de forma declarativa, objetiva e verificável. Sempre que possível, apontar para arquivos, documentação ou decisões versionadas.
 
+## Forma da entrada
+
+Uma entrada de memória é **um fato com um ponteiro**, não um parágrafo. O limite operacional é por unidade, não por arquivo:
+
+- Cada item de lista ou célula de tabela cabe em cerca de 300 caracteres.
+- O que não couber tem outro lugar: o porquê vai para `decisions/`, o detalhe de implementação vai para o doc comment do módulo, e a memória fica com a frase que aponta para lá.
+- Não escrever prosa corrida dentro de célula de tabela. Uma célula que cresceu por acréscimo é um sinal de que o assunto virou uma decisão.
+
+O motivo é operacional, não estético: uma entrada curta é editável, e uma linha de milhares de caracteres não é. Quando atualizar custa reescrever um bloco enorme, a memória para de ser atualizada e passa a acumular — que é exatamente o que a política proíbe. `check.sh` mede esse limite.
+
 ## O que não registrar
 
 Não registrar:
@@ -53,13 +63,39 @@ Não registrar:
 - conteúdo de `.env` ou configurações locais sensíveis;
 - estado momentâneo de uma tarefa;
 - “próximos passos” de uma sessão;
-- resultados isolados de testes, builds ou CI;
+- resultados isolados de testes, builds ou CI — ver a ressalva sobre baselines abaixo;
 - números de PR, commits ou branches usados apenas em uma tarefa passageira;
 - transcrições de conversas;
 - hipóteses não verificadas apresentadas como fatos;
-- informações que já estão claras e canônicas em outro arquivo, sem necessidade de índice ou contexto adicional.
+- informações que já estão claras e canônicas em outro arquivo, sem necessidade de índice ou contexto adicional;
+- inventário de funcionalidades: a lista do que a interface ou a API faz hoje, tela por tela, opção por opção. Isso se lê no código, muda a cada semana e envelhece mais rápido que qualquer outra coisa na memória. Registrar o que **não** se lê no código: a fronteira, o invariante, o motivo.
 
 Use issues, pull requests, planos de trabalho ou o sistema de tarefas para informações temporárias.
+
+### Baseline não é resultado de execução
+
+Um **resultado** responde "passou agora?" e é descartável: a saída de uma execução, o link de um run de CI, a captura de um build. Não entra na memória.
+
+Um **baseline** responde "o que se espera encontrar?" e é durável, porque é falseável: se a contagem esperada era 181 e hoje dá 174, alguma coisa se perdeu, e a memória é o que permite perceber isso. Registrar um baseline exige o que o torna honesto — **data e ambiente junto do número**:
+
+```text
+Verificado em 2026-08-24, Rust 1.98.0: `cargo test --workspace` (181 testes verdes);
+`cargo fmt --all --check` reporta diferenças hoje — não reformatar fora da tarefa.
+```
+
+Pela mesma razão, o inventário do que **ainda não foi exercitado** é memória legítima: não é lista de tarefas, é risco conhecido, e desaparece sozinho quando o fluxo for exercitado. Escrever como risco ("nunca rodado na aplicação: X, Y"), nunca como plano ("falta fazer X").
+
+Um baseline sem data é um resultado disfarçado. Se não der para dizer quando e onde foi verificado, não registrar.
+
+### Relatórios e auditorias datados
+
+Relatórios de pentest, auditoria, benchmark ou análise não são memória nem decisão: são observações com prazo de validade, verdadeiras na data em que foram feitas e frequentemente falsas depois.
+
+- Eles vivem fora de `.agents/`, no diretório que a ferramenta usar, versionados quando o relatório for o que alguém vai ler depois.
+- A memória os referencia dizendo **de quando são** e **o que já mudou desde então**.
+- Quando um achado for corrigido, registrar a correção junto da referência, em vez de deixar o relatório contradizer o código em silêncio.
+
+Sem isso, quem abrir o relatório meses depois reabre um achado que já foi resolvido.
 
 ## Atualização
 
