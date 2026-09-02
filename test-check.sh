@@ -93,6 +93,12 @@ expect "missing PROJECT_MEMORY.md" 1 "missing"
 p="$(fixture)"; rm -rf "$p/.agents/decisions"
 expect "missing decisions/ warns only" 0 "no decision records yet"
 
+# A freshly adopted project: decisions/ exists, nothing in it, and the memory
+# links nothing. grep finds no link and exits 1; under `set -e` + `pipefail`
+# that used to kill check.sh silently before the summary.
+p="$(fixture)"; rm "$p/.agents/decisions/001-only-one.md"; sed -i '/^- \[Only one\]/d' "$p/.agents/PROJECT_MEMORY.md"
+expect "fresh adoption with no decision links" 0 "0 decision record(s), all cross-referenced"
+
 p="$(fixture)"; echo ".agents/" > "$p/.gitignore"
 expect "memory excluded from git" 1 "must be versioned"
 

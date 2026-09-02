@@ -83,7 +83,7 @@ fi
 # --- decision records: referential integrity ---------------------------------
 if [ -d "$DECISIONS" ]; then
   files=$(find "$DECISIONS" -maxdepth 1 -name '*.md' -printf '%f\n' | sed 's/\.md$//' | sort)
-  linked=$(grep -oE 'decisions/[0-9]{3}-[a-z0-9-]+\.md' "$MEM" | sed 's|decisions/||;s|\.md$||' | sort -u)
+  linked=$(grep -oE 'decisions/[0-9]{3}-[a-z0-9-]+\.md' "$MEM" | sed 's|decisions/||;s|\.md$||' | sort -u || true)
 
   orphans=$(comm -23 <(echo "$files") <(echo "$linked") | grep -v '^$' || true)
   broken=$(comm -13 <(echo "$files") <(echo "$linked") | grep -v '^$' || true)
