@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Adopts the agent-instructions structure without replacing existing objects.
+# Requires trusted, stable source/target directories; not atomic confinement.
+# Do not run with elevated privileges or concurrent directory mutation.
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEST="${1:?usage: adopt.sh <project-dir>}"

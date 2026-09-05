@@ -18,6 +18,7 @@ agents/
 ├── wire.sh
 ├── adopt.sh
 ├── check.sh
+├── validate.sh
 ├── test-check.sh
 ├── test-scripts.sh
 ├── template-diff.sh
@@ -45,7 +46,7 @@ agents/
 
 Esse script conecta o `AGENTS.md` canônico deste repositório aos arquivos globais lidos por ferramentas como Claude Code, Codex CLI, Gemini CLI e Hermes.
 
-A ideia é simples: manter um único ponto de verdade para minhas preferências pessoais.
+Os caminhos de `reference/` são relativos ao arquivo canônico real, após resolver symlinks; não ao projeto em edição. `wire.sh` gera os caminhos absolutos locais a partir do clone, sem depender de `Projects` ou `Projetos`. Após mover o clone, execute-o novamente e confira os apontamentos; personas existentes não são migradas automaticamente.
 
 ### 2. Adoção por projeto
 
@@ -66,6 +67,8 @@ Sem sobrescrever arquivos, diretórios ou symlinks existentes. Adoção instala 
 
 Regras ficam em `AGENTS.md`; fatos e comandos, em `.agents/PROJECT_MEMORY.md`; motivos de decisões, em `.agents/decisions/`. Projetos sem decisões ainda podem manter esse diretório vazio.
 
+Adoção e comparação pressupõem diretórios locais confiáveis e estáveis durante a execução. Não execute com privilégios elevados nem permita alterações concorrentes nos diretórios de origem e destino. As verificações de symlinks não são uma sandbox nem garantem confinamento atômico contra substituições concorrentes.
+
 Os scripts usam Bash e utilitários GNU em Linux. Git permite verificar exclusões efetivas e recuperar revisões dos templates; ShellCheck é usado no desenvolvimento e no CI.
 
 ### 3. Verificação
@@ -76,13 +79,17 @@ Os scripts usam Bash e utilitários GNU em Linux. Git permite verificar exclusõ
 
 Confere um projeto adotado contra a política: estrutura no lugar, placeholders do template já preenchidos, entradas de memória dentro do limite de forma, decisões cruzadas com a memória (sem órfãs nem links quebrados), baseline de teste com data, e nenhuma string com cara de credencial nos arquivos de instrução.
 
+Também confere os arquivos opcionais `BOOTSTRAP.md`, `TEMPLATE_ORIGIN` e todos os arquivos de skills contra as exclusões efetivas do Git. Se `.agents/skills/` existir, exige índice, destinos válidos, skills indexadas e frontmatter mínimo com corpo. Projetos antigos sem skills continuam válidos.
+
+O índice usa links inline simples `[nome](nome/SKILL.md)`, sem títulos, escapes ou atalhos de referência. Destinos locais fora desse formato e symlinks de skills são recusados; links externos e âncoras não são verificados. `name` e `description` devem ser únicos no topo do frontmatter, não vazios e em uma linha, com texto simples ou aspas simples/duplas sem escapes; `name` deve corresponder ao diretório. Metadados adicionais não são validados. Isso não é um parser completo de Markdown ou YAML.
+
 Somente leitura — reporta, nunca edita. Sai com 1 em erro, 0 em aviso. Os limites de tamanho podem ser ajustados: `MEM_WARN=400 MEM_FAIL=1200 ./check.sh <projeto>`.
 
 ```bash
-./test-check.sh
-./test-scripts.sh
-shellcheck ./*.sh
+./validate.sh
 ```
+
+Entrada única para agentes e CI: sintaxe Bash, ShellCheck, as duas suítes e `check.sh .`, nessa ordem. Para na primeira falha e propaga seu código de saída; não instala dependências. Pode ser invocada de qualquer diretório pelo caminho do script.
 
 Cada caso monta um projeto de mentira, quebra exatamente uma coisa e exige que o `check.sh` reporte — mais um caso que não quebra nada e exige silêncio. Um check que para de ler continua imprimindo `ok`, e isso é indistinguível de um check que funciona.
 
@@ -116,7 +123,7 @@ Referências de descoberta: [Codex](https://developers.openai.com/codex/skills/)
 
 ### Validação contínua
 
-O workflow `.github/workflows/validate.yml` executa sintaxe Bash, ShellCheck, as duas suítes e a verificação deste repositório. Os testes de instalação usam projetos temporários e HOME isolado; não conectam suas ferramentas reais.
+O workflow `.github/workflows/validate.yml` instala ShellCheck e chama o mesmo `./validate.sh` usado localmente. Os testes de instalação usam projetos temporários e HOME isolado; não conectam suas ferramentas reais.
 
 `check.sh` valida estrutura e heurísticas, não a veracidade da memória, segurança completa ou correção da aplicação. Um resultado verde não substitui testes do projeto nem sua aprovação manual.
 

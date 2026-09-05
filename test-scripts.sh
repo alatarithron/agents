@@ -33,20 +33,27 @@ pass 'symlinked .agents rejected before writes'
 mkdir "$TMP/race-bin" "$TMP/race-project" "$TMP/race-outside"
 REAL_MKDIR="$(command -v mkdir)"
 export REAL_MKDIR RACE_PROJECT="$TMP/race-project" RACE_OUTSIDE="$TMP/race-outside"
+export RACE_MARKER="$TMP/race-injected"
 # shellcheck disable=SC2016
-printf '%s\n' '#!/usr/bin/env bash' \
-  'ln -s "$RACE_OUTSIDE" "$RACE_PROJECT/.agents"' \
+printf '%s\n' '#!/usr/bin/env bash' 'set -euo pipefail' \
+  'if [ ! -e "$RACE_MARKER" ]; then' \
+  '  ln -sT "$RACE_OUTSIDE" "$RACE_PROJECT/.agents"' \
+  '  : > "$RACE_MARKER"' \
+  'fi' \
   'exec "$REAL_MKDIR" "$@"' > "$TMP/race-bin/mkdir"
 chmod +x "$TMP/race-bin/mkdir"
 race_status=0
 PATH="$TMP/race-bin:$PATH" bash "$SRC/adopt.sh" "$RACE_PROJECT" > "$TMP/log" 2>&1 || race_status=$?
 [[ -L "$RACE_PROJECT/.agents" ]] || fail 'race shim did not introduce symlink'
+# Repeated shim calls must not create entries in the external target themselves.
+"$TMP/race-bin/mkdir" -p "$TMP/race-probe"
+"$TMP/race-bin/mkdir" -p "$TMP/race-probe"
 shopt -s nullglob dotglob
 outside_entries=("$RACE_OUTSIDE"/*)
 shopt -u nullglob dotglob
 [[ ${#outside_entries[@]} -eq 0 ]] || fail 'raced adoption wrote outside target'
 [[ "$race_status" -ne 0 ]] || fail 'raced adoption did not fail'
-pass 'parent symlink introduced after preflight cannot redirect adoption writes'
+pass 'first-mkdir symlink injection is rejected; repeated shim calls stay inert'
 [[ -f "$PROJECT/.agents/BOOTSTRAP.md" ]] || fail 'bootstrap missing'
 [[ -f "$PROJECT/.agents/TEMPLATE_ORIGIN" ]] || fail 'provenance missing'
 if grep -q $'file\tAGENTS.md\t' "$PROJECT/.agents/TEMPLATE_ORIGIN"; then fail 'preexisting file falsely attributed'; fi
@@ -174,3 +181,42 @@ ln -s "$TMP/external-soul" "$TMP/linked-profile/SOUL.md"
 HERMES_HOME="$TMP/linked-profile" bash "$SRC/wire.sh" > "$TMP/log"
 [[ "$(< "$TMP/external-soul")" = 'External persona' ]] || fail 'wire followed persona symlink'
 pass 'symlinked persona preserved without touching its target'
+
+# Exercise the real validation entry point with isolated, observable gates.
+VALIDATE_ROOT="$TMP/validation kit"
+mkdir -p "$VALIDATE_ROOT/bin"
+cp "$ROOT/validate.sh" "$VALIDATE_ROOT/validate.sh"
+export VALIDATE_TRACE="$TMP/validation-trace" FAIL_STAGE=''
+for entry in 'bin/shellcheck:lint' 'test-check.sh:docs' 'test-scripts.sh:scripts' 'check.sh:policy'; do
+  file="${entry%:*}"; stage="${entry#*:}"
+  # shellcheck disable=SC2016
+  printf '%s\n' '#!/usr/bin/env bash' "stage=$stage" \
+    'printf "%s\\n" "$stage" >> "$VALIDATE_TRACE"' \
+    'if [ "$FAIL_STAGE" = "$stage" ]; then exit 23; fi' > "$VALIDATE_ROOT/$file"
+  chmod +x "$VALIDATE_ROOT/$file"
+done
+for FAIL_STAGE in '' lint docs scripts policy; do
+  : > "$VALIDATE_TRACE"
+  status=0
+  (cd "$TMP"; PATH="$VALIDATE_ROOT/bin:$PATH" bash "$VALIDATE_ROOT/validate.sh") > "$TMP/validate-log" 2>&1 || status=$?
+  expected_status=23
+  case "$FAIL_STAGE" in
+    '') expected_status=0; expected=$'lint\ndocs\nscripts\npolicy' ;;
+    lint) expected=lint ;;
+    docs) expected=$'lint\ndocs' ;;
+    scripts) expected=$'lint\ndocs\nscripts' ;;
+    policy) expected=$'lint\ndocs\nscripts\npolicy' ;;
+  esac
+  [[ "$status" -eq "$expected_status" ]] || fail "validate exit propagation: $FAIL_STAGE"
+  [[ "$(< "$VALIDATE_TRACE")" = "$expected" ]] || fail "validate gate ordering: $FAIL_STAGE"
+  if [ -n "$FAIL_STAGE" ] && grep -q 'All validation gates passed' "$TMP/validate-log"; then
+    fail 'validation claimed success after failure'
+  fi
+done
+printf 'if\n' > "$VALIDATE_ROOT/broken.sh"
+: > "$VALIDATE_TRACE"
+if PATH="$VALIDATE_ROOT/bin:$PATH" bash "$VALIDATE_ROOT/validate.sh" > "$TMP/validate-log" 2>&1; then
+  fail 'invalid shell syntax accepted'
+fi
+[[ ! -s "$VALIDATE_TRACE" ]] || fail 'validation continued after syntax error'
+pass 'validation entry point preserves gate order and failure codes from another directory'

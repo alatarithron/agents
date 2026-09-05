@@ -196,6 +196,78 @@ p="$(fixture)"; git -C "$p" init -q
 printf '.agents/\n' >> "$p/.git/info/exclude"
 expect "git info exclude is checked" 1 "must be versioned"
 
+# Approved skill checks: valid shipped content plus isolated negative cases.
+skill_fixture() {
+  fixture
+  cp -R "$ROOT/templates/skills" "$WORK/p/.agents/skills"
+}
+p="$(skill_fixture)"
+expect "shipped skill index and frontmatter pass" 0 "passed with 0 warning"
+
+p="$(skill_fixture)"; rm "$p/.agents/skills/README.md"
+expect "installed skills require an index" 1 "regular non-symlink index"
+
+p="$(skill_fixture)"
+sed -i 's|debugging/SKILL.md|missing/SKILL.md|' "$p/.agents/skills/README.md"
+expect "broken skill link fails" 1 "not an existing regular non-symlink file"
+
+p="$(skill_fixture)"
+sed -i '/^| \[debugging\]/d' "$p/.agents/skills/README.md"
+expect "unindexed skill fails" 1 "skill is not indexed"
+
+p="$(skill_fixture)"
+sed -i 's|debugging/SKILL.md|../debugging/SKILL.md|' "$p/.agents/skills/README.md"
+expect "skill index traversal fails" 1 "unsafe or unsupported skill index target"
+
+p="$(skill_fixture)"
+rm "$p/.agents/skills/debugging/SKILL.md"
+ln -s "$ROOT/templates/skills/debugging/SKILL.md" "$p/.agents/skills/debugging/SKILL.md"
+expect "symlinked skill fails" 1 "non-symlink file"
+
+for field in name description; do
+  p="$(skill_fixture)"
+  sed -i "/^$field:/d" "$p/.agents/skills/debugging/SKILL.md"
+  expect "missing skill $field fails" 1 "missing frontmatter $field"
+  p="$(skill_fixture)"
+  sed -i "s/^$field:.*/$field: \"\"/" "$p/.agents/skills/debugging/SKILL.md"
+  expect "empty skill $field fails" 1 "empty frontmatter field: $field"
+done
+
+p="$(skill_fixture)"
+sed -i '/^description:/a description: Duplicate.' "$p/.agents/skills/debugging/SKILL.md"
+expect "duplicate skill description fails" 1 "duplicate frontmatter field"
+
+p="$(skill_fixture)"
+sed -i 's/^name: debugging/name: different/' "$p/.agents/skills/debugging/SKILL.md"
+expect "skill name must match directory" 1 "name must match directory"
+
+p="$(skill_fixture)"
+printf '%s\n' '---' 'name: debugging' 'description: No body.' '---' > "$p/.agents/skills/debugging/SKILL.md"
+expect "empty skill body fails" 1 "empty skill body"
+
+p="$(skill_fixture)"
+sed -i '1d' "$p/.agents/skills/debugging/SKILL.md"
+expect "skill opening delimiter required" 1 "missing opening"
+
+p="$(skill_fixture)"
+printf '%s\n' '---' 'name: debugging' 'description: No closing delimiter.' > "$p/.agents/skills/debugging/SKILL.md"
+expect "skill closing delimiter required" 1 "missing closing"
+
+p="$(skill_fixture)"
+sed -i '/^version:/a platforms: [linux]\nmetadata:\n  category: development' "$p/.agents/skills/debugging/SKILL.md"
+expect "optional structured metadata allowed" 0 "passed with 0 warning"
+
+for ignored in .agents/BOOTSTRAP.md .agents/TEMPLATE_ORIGIN .agents/skills/README.md \
+  .agents/skills/debugging/SKILL.md .agents/skills/debugging/scripts/helper.sh; do
+  p="$(skill_fixture)"; git -C "$p" init -q
+  mkdir -p "$p/.agents/skills/debugging/scripts"
+  printf 'Bootstrap fixture\n' > "$p/.agents/BOOTSTRAP.md"
+  printf 'template-origin-v1\nrevision\tunknown\n' > "$p/.agents/TEMPLATE_ORIGIN"
+  printf '# Helper fixture\n' > "$p/.agents/skills/debugging/scripts/helper.sh"
+  printf '%s\n' "$ignored" > "$p/.gitignore"
+  expect "new asset ignore detected: $ignored" 1 "$ignored is ignored by git"
+done
+
 # Exercise each authoring prompt in the shipped templates independently, so
 # one detected placeholder cannot hide another undetected prompt.
 for template in PROJECT_MEMORY.md AGENTS.project.md; do

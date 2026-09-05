@@ -11,6 +11,7 @@
 - `AGENTS.md` — the canonical personal rules. Symlinked into the global tool files; see [001](decisions/001-root-agents-is-the-canonical-file.md).
 - `wire.sh` — creates those global symlinks. `adopt.sh` — installs the structure into a project. Both idempotent.
 - `check.sh` — reports structure and policy heuristics; `test-check.sh` exercises positive and negative cases.
+- `validate.sh` — shared local/CI entry point, failing at the first unsuccessful syntax, lint, suite or policy gate.
 - `template-diff.sh` — read-only template comparisons; `test-scripts.sh` exercises adoption and global wiring inside isolated fixtures.
 - `templates/` — copied into adopted projects. `reference/` — long-form material, never loaded automatically by agents.
 
@@ -39,6 +40,7 @@
 Install:             none
 Run (global wiring): ./wire.sh
 Run (adopt project): ./adopt.sh <project-dir>
+Validate kit:        ./validate.sh
 Test existing suite: ./test-check.sh && ./test-scripts.sh
 Lint:                shellcheck ./*.sh
 Verify a project:    ./check.sh <project-dir>
@@ -67,8 +69,11 @@ Verify a project:    ./check.sh <project-dir>
 - `templates/AGENTS.project.md` deliberately restates rules from `AGENTS.md`; the mirrored sections are mapped in `templates/README.md` and drift silently if only one side is edited.
 - Adopted files are independent copies. `template-diff.sh` compares them without overwriting local rules; provenance is inert text, not an executable configuration.
 - `.agents/skills/` holds on-demand procedures. Native discovery differs by tool; the template instructs agents to read matching files explicitly.
+- `check.sh` checks installed skill links, required scalar fields/body and ignored assets; it is not a full Markdown/YAML parser. Supported forms are in `templates/skills/README.md`.
 - `templates/BOOTSTRAP.md` is first-session guidance, not routine context. Rules live in project `AGENTS.md`; commands and architecture live in memory only.
 - `check.sh` thresholds (400/1200) are calibrated on two adopted projects, not derived. Treat a failure as a question, not a verdict.
+- Adoption/comparison require trusted local source and target directories without concurrent mutation; pathname checks are not atomic confinement (see `README.md`).
+- Canonical reference paths resolve relative to the real kit `AGENTS.md`; only `wire.sh` generates machine-specific absolute integration paths.
 
 ## Canonical documentation
 

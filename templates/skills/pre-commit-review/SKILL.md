@@ -18,7 +18,7 @@ Use before a user-authorized commit or when explicitly asked to review changes. 
 2. Prioritize data loss or disclosure, authorization flaws, functional regressions, error handling, concurrency, compatibility, and missing relevant validation. Report location, impact, evidence, and a concrete correction; omit cosmetic preferences.
 3. Inspect for secrets without exposing their values. Check boundary validation and external side effects. Inspect scripts and configuration as executable behavior, not harmless documentation.
 4. Run relevant existing tests, lint, type checks, and build after the last edit. Compare pre-existing failures using recorded baseline evidence or an isolated checkout, never automatic stash/reset. An unavailable check is unverified, not passed.
-5. If review finds a defect, fix only within the authorized scope and rerun affected checks. Use independent read-only review for consequential changes when available; delegate only authorized data and file scope.
+5. For consequential changes, use one independent read-only review when available, with an explicit scope and completion criterion. Fix confirmed defects within scope, then revalidate the findings and affected checks; repeat a broad review only if the correction expands risk. Unresolved findings remain blockers, not a reason for endless review loops. Delegate only authorized data and files.
 6. Before committing, inspect the exact staged diff and stage named paths only. Follow the repository's commit format. Push only with separate authorization, then verify the remote commit and required CI results.
 
 ## Pitfalls
@@ -26,6 +26,7 @@ Use before a user-authorized commit or when explicitly asked to review changes. 
 - Do not weaken tests, skip hooks, or hide failures to satisfy a green gate.
 - Do not create feature-specific tests before the user's manual approval unless explicitly authorized.
 - Avoid automatic cleanup, rewriting history, or removing another contributor's work.
+- Tie asynchronous findings to the reviewed revision or diff. Consolidate results before completion; a late duplicate is not a new review, but a previously unseen valid finding still needs triage.
 
 ## Verification
 

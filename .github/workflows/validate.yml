@@ -22,13 +22,5 @@ jobs:
           persist-credentials: false
       - name: Install ShellCheck
         run: sudo apt-get update && sudo apt-get install --yes shellcheck
-      - name: Check shell syntax and lint
-        run: |
-          for script in ./*.sh; do bash -n "$script"; done
-          shellcheck ./*.sh
-      - name: Exercise documentation checks
-        run: ./test-check.sh
-      - name: Exercise adoption and isolated tool wiring
-        run: ./test-scripts.sh
-      - name: Validate this repository
-        run: ./check.sh .
+      - name: Validate agent kit
+        run: ./validate.sh
