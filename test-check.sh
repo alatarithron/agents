@@ -151,6 +151,13 @@ p="$(fixture)"
 printf '\n- The invariant a change must never violate, and what to do instead when the task seems to require it.' >> "$p/AGENTS.md"
 expect "AGENTS example rule fails" 1 "template guidance"
 
+# A freshly adopted project: decisions/ exists, nothing in it, and the memory
+# links nothing. grep finds no link and exits 1; under `set -e` + `pipefail`
+# that used to kill check.sh silently before the summary.
+p="$(fixture)"; rm "$p/.agents/decisions/001-only-one.md"
+sed -i 's/^- \[Only one\].*/- No architectural decisions yet./' "$p/.agents/PROJECT_MEMORY.md"
+expect "fresh adoption with no decision links" 0 "0 decision record(s), all cross-referenced"
+
 p="$(fixture)"; echo ".agents/" > "$p/.gitignore"
 expect "memory excluded outside git" 1 "must be versioned"
 

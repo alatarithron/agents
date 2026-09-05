@@ -31,6 +31,7 @@ agents/
 └── reference/
     ├── DEVELOPMENT-GUIDELINES.md
     ├── SECURITY-AND-PRIVACY.md
+    ├── AI-ECOSYSTEM-NOTES.md
     └── PROJECT-MEMORY-POLICY.md
 ```
 
