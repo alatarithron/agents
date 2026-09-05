@@ -15,6 +15,8 @@ Memória de projeto é documentação técnica durável. Não é histórico de c
 ├── AGENTS.md
 └── .agents/
     ├── PROJECT_MEMORY.md
+    ├── skills/
+    │   └── <name>/SKILL.md
     └── decisions/
         └── NNN-short-title.md
 ```
@@ -22,6 +24,8 @@ Memória de projeto é documentação técnica durável. Não é histórico de c
 - `AGENTS.md`: regras operacionais que o agente deve aplicar imediatamente.
 - `.agents/PROJECT_MEMORY.md`: fatos estáveis e contexto reutilizável do projeto.
 - `.agents/decisions/`: decisões arquiteturais ou operacionais que precisam de contexto, alternativas e consequências.
+- `.agents/skills/`: procedimentos reutilizáveis, carregados conforme a tarefa; não fatos nem estado temporário.
+- `.agents/BOOTSTRAP.md`: roteiro de adoção, fora da leitura recorrente. `.agents/TEMPLATE_ORIGIN`: proveniência inerte dos arquivos instalados, nunca comandos a executar.
 
 A memória não deve existir apenas em bancos globais da ferramenta, diretórios pessoais, sessões de chat ou serviços externos. Esses mecanismos podem servir como cache ou conveniência, mas o repositório é a fonte de verdade para contexto específico do projeto.
 
@@ -122,7 +126,7 @@ O agente não deve salvar memória específica do projeto apenas em memória glo
 
 ## Versionamento
 
-- `AGENTS.md`, `.agents/PROJECT_MEMORY.md` e `.agents/decisions/` devem ser rastreados pelo Git.
+- `AGENTS.md`, `.agents/PROJECT_MEMORY.md`, `.agents/decisions/` e skills adotadas devem ser rastreados pelo Git. Versionar também `.agents/TEMPLATE_ORIGIN` quando presente; ele permite revisar a origem dos templates sem sincronização automática.
 - Eles não devem ser adicionados ao `.gitignore`.
 - Alterações de memória devem ser revisadas como qualquer outra alteração técnica.
 - Commits que incluam memória devem seguir a mesma política do projeto.

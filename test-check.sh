@@ -91,10 +91,135 @@ p="$(fixture)"; rm "$p/.agents/PROJECT_MEMORY.md"
 expect "missing PROJECT_MEMORY.md" 1 "missing"
 
 p="$(fixture)"; rm -rf "$p/.agents/decisions"
-expect "missing decisions/ warns only" 0 "no decision records yet"
+expect "missing decisions/ with a linked ADR fails" 1 "do not exist"
+
+p="$(fixture)"; rm -rf "$p/.agents/decisions"
+printf '# Project memory\n\nNo decisions yet.' > "$p/.agents/PROJECT_MEMORY.md"
+expect "missing decisions/ without links warns only" 0 "passed with 1 warning"
+
+p="$(fixture)"; rm "$p/.agents/decisions/001-only-one.md"
+printf '# Project memory\n\nNo decisions yet.' > "$p/.agents/PROJECT_MEMORY.md"
+expect "empty decisions/ without links completes" 0 "passed with 0 warning"
+
+p="$(fixture)"
+printf '# Project memory\n\nNo decisions yet.' > "$p/.agents/PROJECT_MEMORY.md"
+expect "unlinked ADR without any links warns" 0 "never referenced"
+
+p="$(fixture)"
+printf '\n- [Ghost](decisions/002-ghost.md)' >> "$p/.agents/PROJECT_MEMORY.md"
+expect "missing ADR on final unterminated line" 1 "002-ghost"
+
+p="$(fixture)"; cp "$ROOT/templates/PROJECT_MEMORY.md" "$p/.agents/PROJECT_MEMORY.md"
+expect "untouched memory template fails" 1 "empty placeholders"
+
+for field in 'Primary goal' 'Explicit non-goals' 'Intended users' \
+  'Main components and their responsibilities' 'Important boundaries' 'Data flow' \
+  'Supported operating systems' 'Runtime and required versions' 'Package manager' \
+  'External services' 'Install' 'Run' 'Test existing suite' 'Lint' 'Type-check' 'Build' \
+  'Project-specific naming or structure' 'Error-handling conventions' \
+  'API or database conventions' 'Compatibility requirements'; do
+  p="$(fixture)"
+  printf '\n%s:   ' "$field" >> "$p/.agents/PROJECT_MEMORY.md"
+  expect "empty memory field: $field (no newline)" 1 "empty placeholders"
+done
+
+for field in 'Purpose' 'Architecture' 'Runtime and package manager' 'Install command' \
+  'Run command' 'Test command' 'Lint command' 'Type-check command' \
+  'Build command' 'Compatibility requirements'; do
+  p="$(fixture)"
+  printf '\n- %s:' "$field" >> "$p/AGENTS.md"
+  expect "empty legacy AGENTS field: $field" 1 "empty placeholders"
+done
+
+p="$(fixture)"
+printf '\n## Architecture\n' >> "$p/.agents/PROJECT_MEMORY.md"
+expect "empty memory section fails" 1 "empty section"
+
+p="$(fixture)"
+printf '\n## Domain language\n\n| Term | Meaning |\n| --- | --- |' >> "$p/.agents/PROJECT_MEMORY.md"
+expect "header-only memory table fails" 1 "empty section"
+
+p="$(fixture)"
+printf '\n- [Decision title](decisions/NNN-short-title.md)' >> "$p/.agents/PROJECT_MEMORY.md"
+expect "placeholder ADR link fails" 1 "template guidance"
+
+p="$(fixture)"
+printf '\n- Durable, verified limitations and recurring traps.' >> "$p/.agents/PROJECT_MEMORY.md"
+expect "memory guidance without newline fails" 1 "template guidance"
+
+p="$(fixture)"
+printf '\n- The invariant a change must never violate, and what to do instead when the task seems to require it.' >> "$p/AGENTS.md"
+expect "AGENTS example rule fails" 1 "template guidance"
 
 p="$(fixture)"; echo ".agents/" > "$p/.gitignore"
-expect "memory excluded from git" 1 "must be versioned"
+expect "memory excluded outside git" 1 "must be versioned"
+
+p="$(fixture)"; printf '# /.agents/ is versioned\n!.agents/\n' > "$p/.gitignore"
+expect "comments and negations outside git pass" 0 "passed with 0 warning"
+
+p="$(fixture)"; printf '.agents/\n!.agents/\n' > "$p/.gitignore"
+expect "ambiguous ignore rules outside git warn" 0 "effective ignore rules cannot be verified"
+
+# Isolate Git from the users configuration without changing their home.
+export GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null
+for pattern in '.agents/' '*.md' '.agents/PROJECT_MEMORY.md' '.agents/decisions/*.md' 'AGENTS.md'; do
+  p="$(fixture)"; git -C "$p" init -q
+  printf '%s' "$pattern" > "$p/.gitignore"
+  expect "git effectively ignores $pattern (no newline)" 1 "must be versioned"
+done
+
+p="$(fixture)"; git -C "$p" init -q
+printf '# /.agents/ is versioned\n*.md\n!AGENTS.md\n!.agents/PROJECT_MEMORY.md\n!.agents/decisions/*.md\n' > "$p/.gitignore"
+expect "git honours negations and comments" 0 "passed with 0 warning"
+
+p="$(fixture)"; git -C "$p" init -q
+printf '.agents/\n!.agents/PROJECT_MEMORY.md\n' > "$p/.gitignore"
+expect "cannot reinclude a file under an ignored parent" 1 "must be versioned"
+
+p="$(fixture)"; git -C "$p" init -q
+git -C "$p" add AGENTS.md .agents
+printf '*.md\n' > "$p/.gitignore"
+expect "tracked files still checked for ignore rules" 1 "must be versioned"
+
+p="$(fixture)"; git -C "$p" init -q
+printf '*.md\n' > "$p/.agents/.gitignore"
+expect "nested ignore rules are checked" 1 "must be versioned"
+
+p="$(fixture)"; git -C "$p" init -q
+printf '.agents/\n' >> "$p/.git/info/exclude"
+expect "git info exclude is checked" 1 "must be versioned"
+
+# Exercise each authoring prompt in the shipped templates independently, so
+# one detected placeholder cannot hide another undetected prompt.
+for template in PROJECT_MEMORY.md AGENTS.project.md; do
+  while IFS= read -r prompt || [ -n "$prompt" ]; do
+    p="$(fixture)"
+    target="$p/.agents/PROJECT_MEMORY.md"
+    [ "$template" != AGENTS.project.md ] || target="$p/AGENTS.md"
+    printf '\n%s' "$prompt" >> "$target"
+    expect "$template guidance: ${prompt:0:55}" 1 "template guidance"
+  done < <(awk '
+    FILENAME ~ /AGENTS.project.md$/ {
+      if (/^## Repository-specific rules/) rules = 1
+      if (rules && NF && !/^#/) print
+      next
+    }
+    /^## Maintenance/ { exit }
+    /^> .*Delete every section/ { print; next }
+    /^[-A-Za-z]/ && !/:[[:space:]]*$/ { print }
+  ' "$ROOT/templates/$template")
+done
+
+p="$(fixture)"; : > "$p/.agents/PROJECT_MEMORY.md"
+expect "empty memory fails" 1 "no project facts"
+
+p="$(fixture)"
+printf '# Project memory' > "$p/.agents/PROJECT_MEMORY.md"
+expect "title-only memory fails without newline" 1 "no project facts"
+
+p="$(fixture)"
+printf '\n## Domain language\n\n| Term | Meaning |\n| --- | --- |\n| widget | Durable unit. |' >> "$p/.agents/PROJECT_MEMORY.md"
+expect "populated memory table passes without newline" 0 "passed with 0 warning"
 
 p="$(fixture)"; printf -- '- Purpose:\n' >> "$p/AGENTS.md"
 expect "unfilled template placeholder" 1 "empty placeholders"
@@ -113,6 +238,10 @@ expect "record nobody references" 0 "never referenced"
 
 p="$(fixture)"; sed -i '/^- Status:/d' "$p/.agents/decisions/001-only-one.md"
 expect "record without a Status" 0 "no Status line"
+
+p="$(fixture)"
+printf '# Decision\n\n- Status: accepted' > "$p/.agents/decisions/001-only-one.md"
+expect "record without a Date (no newline)" 0 "no Date line"
 
 p="$(fixture)"; sed -i 's/^Verificado.*/12 tests green, no date./' "$p/.agents/PROJECT_MEMORY.md"
 expect "test baseline without a date" 0 "without a verification date"
@@ -137,11 +266,11 @@ printf -- '- %s\n' "$(head -c 200 /dev/zero | tr '\0' 'x')" >> "$p/.agents/PROJE
 CASES=$((CASES + 1))
 # Captured, not piped: check.sh exits 1 here, and under `pipefail` a pipeline
 # would carry that exit code even when grep matched.
-out="$(MEM_FAIL=100 "$ROOT/check.sh" "$WORK/p" 2>&1)"
-if printf '%s' "$out" | grep -qF "over 100 chars"; then
+out="$(MEM_FAIL=100 "$ROOT/check.sh" "$WORK/p" 2>&1)"; code=$?
+if [ "$code" -eq 1 ] && printf '%s' "$out" | grep -qF "over 100 chars"; then
   printf '  ok    %s\n' "threshold honours MEM_FAIL"
 else
-  printf '  FAIL  %s — report lacks: over 100 chars\n' "threshold honours MEM_FAIL"
+  printf '  FAIL  %s — expected exit 1 and report containing: over 100 chars (got exit %d)\n' "threshold honours MEM_FAIL" "$code"
   printf '%s\n' "$out" | sed 's/^/          /'
   FAILED=1
 fi

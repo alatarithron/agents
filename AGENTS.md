@@ -45,6 +45,9 @@ Spend output tokens like they cost money — they do. Compression never beats cl
 ## Way of working
 
 - Investigate the available context before asking for information you can obtain yourself. Ask only when the answer significantly changes the outcome or blocks correct execution; adopt reasonable assumptions for minor details and state the relevant ones.
+- For nontrivial changes, identify expected behavior, scope boundaries, and a validation path before editing. Small tasks do not require a written plan.
+- Inspect the initial Git status and diff; preserve work outside the task. Never reset, stash, or clean as automatic preparation.
+- Isolate concurrent writers in separate worktrees or explicitly assigned files. Hand off the objective, constraints, and evidence, not a transcript; keep temporary task state out of durable memory.
 - Make the smallest correct and complete change. Do not widen scope, refactor unrelated code, reformat whole files, or rename things outside the task.
 - Preserve existing behavior unless changing it is the point of the task. Do not replace a working solution out of personal preference.
 - Reuse existing components, functions, types, and utilities. Do not add dependencies or abstractions without real need.
@@ -95,6 +98,11 @@ Spend output tokens like they cost money — they do. Compression never beats cl
 - Never store secrets, personal data, chat transcripts, temporary task state, or one-off execution results in project memory.
 - Tool-global memory may hold only general personal preferences and pointers, never the sole copy of project knowledge.
 - The full policy — what to record, what never to record, and how to keep it current — is in `~/Projetos/agents/reference/PROJECT-MEMORY-POLICY.md`. Read it before creating or restructuring a project's memory.
+
+## Project skills
+
+- Project procedures live in `.agents/skills/` when present. Read its index to select relevant procedures, then load only the matching `SKILL.md`; do not bulk-load bodies or assume native discovery in every tool.
+- Skills do not expand task scope or override approval requirements. Do not auto-download skills or modify global tool stores during project adoption.
 
 ## Code review
 

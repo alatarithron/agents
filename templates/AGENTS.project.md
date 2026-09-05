@@ -26,6 +26,9 @@ Before changing code:
 
 - Communicate with the user in Brazilian Portuguese unless another language is requested.
 - Write source code, identifiers, comments, tests, logs, branches, commits, and technical artifacts in English, except localized user-facing text and precise domain terms.
+- For nontrivial changes, identify expected behavior, scope boundaries, and a validation path before editing. Small tasks do not require a written plan.
+- Inspect the initial Git status and diff; preserve work outside the task. Never reset, stash, or clean as automatic preparation.
+- Isolate concurrent writers in separate worktrees or explicitly assigned files. Hand off the objective, constraints, and evidence, not a transcript; keep temporary task state out of durable memory.
 - Make the smallest correct change; avoid unrelated refactoring or reformatting.
 - Prefer simple, explicit, secure, and maintainable solutions.
 - Validate external data at system boundaries and handle errors explicitly.
@@ -57,22 +60,13 @@ Before changing code:
 - Never store secrets, personal data, chat transcripts, temporary task state, or one-off execution results in project memory.
 - The repository is the source of truth; tool-global memory must never be the only copy of project knowledge.
 
-## Repository-specific information
+## Project skills
 
-Replace this section with actual project details and remove all placeholders:
+Read `.agents/skills/README.md` when selecting a procedure, then load only the matching `SKILL.md` by its relative path. Do not assume native discovery or load all skills on startup. Use `debugging` for failures, `code-simplifier` for one bounded pass over task-owned changes before final validation, and `pre-commit-review` before an authorized commit. Skip a missing skill with an explicit note; do not install tools or download replacements automatically.
 
-- Purpose:
-- Architecture:
-- Runtime and package manager:
-- Install command:
-- Run command:
-- Test command:
-- Lint command:
-- Type-check command:
-- Build command:
-- Compatibility requirements:
+## Project context
 
-Add a line for anything an agent would otherwise get wrong: a required commit identity, a check that is knowingly not clean today, a command that must not be run while another is up.
+Purpose, architecture, verified commands, compatibility constraints, and known pitfalls live in `.agents/PROJECT_MEMORY.md`. Do not duplicate them here. During initial adoption only, follow `.agents/BOOTSTRAP.md` if present; do not load it routinely afterward.
 
 ## Repository-specific rules
 
