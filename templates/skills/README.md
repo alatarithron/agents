@@ -6,6 +6,7 @@ Versioned procedures, loaded on demand. Rules remain in `AGENTS.md`; verified fa
 | --- | --- |
 | [code-simplifier](code-simplifier/SKILL.md) | Explicit cleanup request or one bounded pass over task changes before final validation. |
 | [debugging](debugging/SKILL.md) | Unexpected behavior, a failing check, or a regression. |
+| [performance-optimizer](performance-optimizer/SKILL.md) | Reported or observed slowness with a measurable target. |
 | [pre-commit-review](pre-commit-review/SKILL.md) | Review request or an authorized commit. |
 
 Read only the matching skill. Never bulk-load all skill bodies. A skill does not override repository rules, approval requirements, or the user's current request.

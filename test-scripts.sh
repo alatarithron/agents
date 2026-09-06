@@ -13,7 +13,7 @@ printf '# Bootstrap fixture\n' > "$TMP/source/templates/BOOTSTRAP.md"
 SRC="$TMP/source"
 mkdir -p "$SRC/templates/skills"
 printf '# Skill fixtures\n' > "$SRC/templates/skills/README.md"
-for skill in code-simplifier debugging pre-commit-review; do
+for skill in code-simplifier debugging performance-optimizer pre-commit-review; do
   mkdir -p "$SRC/templates/skills/$skill"
   printf '# %s fixture\n' "$skill" > "$SRC/templates/skills/$skill/SKILL.md"
 done
@@ -91,14 +91,14 @@ printf '$(touch %s)\n' "$TMP/executed" >> "$TMP/fresh/.agents/TEMPLATE_ORIGIN"
 bash "$SRC/template-diff.sh" "$TMP/fresh" > "$TMP/diff"
 [[ ! -e "$TMP/executed" ]] || fail 'provenance executed'
 pass 'read-only template comparison, legacy fallback and local git baselines'
-for relative in skills/README.md skills/code-simplifier/SKILL.md skills/debugging/SKILL.md skills/pre-commit-review/SKILL.md; do
+for relative in skills/README.md skills/code-simplifier/SKILL.md skills/debugging/SKILL.md skills/performance-optimizer/SKILL.md skills/pre-commit-review/SKILL.md; do
   cmp "$SRC/templates/$relative" "$PROJECT/.agents/$relative" || fail "skill missing: $relative"
   grep -qF "$relative" "$PROJECT/.agents/TEMPLATE_ORIGIN" || fail 'skill provenance missing'
 done
 printf 'Local skill\n' > "$PROJECT/.agents/skills/debugging/SKILL.md"
 bash "$SRC/adopt.sh" "$PROJECT" > "$TMP/log"
 [[ "$(< "$PROJECT/.agents/skills/debugging/SKILL.md")" = 'Local skill' ]] || fail 'skill overwritten'
-for relative in skills skills/debugging skills/code-simplifier skills/pre-commit-review decisions; do
+for relative in skills skills/debugging skills/code-simplifier skills/performance-optimizer skills/pre-commit-review decisions; do
   unsafe="$TMP/unsafe-${relative//\//-}"
   mkdir -p "$unsafe/.agents/$(dirname "$relative")"
   ln -s "$TMP/outside" "$unsafe/.agents/$relative"
@@ -150,7 +150,7 @@ pass 'broken parents, skill comparison and optional Git'
 # Exercise the actual shipped templates too, not only tiny test fixtures.
 mkdir "$TMP/shipped-project"
 bash "$ROOT/adopt.sh" "$TMP/shipped-project" > "$TMP/log"
-for relative in BOOTSTRAP.md PROJECT_MEMORY.md skills/README.md skills/code-simplifier/SKILL.md skills/debugging/SKILL.md skills/pre-commit-review/SKILL.md; do
+for relative in BOOTSTRAP.md PROJECT_MEMORY.md skills/README.md skills/code-simplifier/SKILL.md skills/debugging/SKILL.md skills/performance-optimizer/SKILL.md skills/pre-commit-review/SKILL.md; do
   cmp "$ROOT/templates/$relative" "$TMP/shipped-project/.agents/$relative" || fail "shipped template mismatch: $relative"
 done
 bash "$ROOT/template-diff.sh" "$TMP/shipped-project" > "$TMP/diff"
@@ -163,7 +163,7 @@ while IFS=$'\t' read -r kind relative source blob; do
 done < "$TMP/shipped-project/.agents/TEMPLATE_ORIGIN"
 pass 'shipped template integration'
 # Shipped skills intentionally use simple, single-line YAML scalar fields.
-for skill in code-simplifier debugging pre-commit-review; do
+for skill in code-simplifier debugging performance-optimizer pre-commit-review; do
   awk -v name="$skill" '
     NR == 1 { if ($0 != "---") exit 1; next }
     $0 == "---" && !closed { closed = 1; next }

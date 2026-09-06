@@ -62,7 +62,7 @@ Before changing code:
 
 ## Project skills
 
-Read `.agents/skills/README.md` when selecting a procedure, then load only the matching `SKILL.md` by its relative path. Do not assume native discovery or load all skills on startup. Use `debugging` for failures, `code-simplifier` for one bounded pass over task-owned changes before final validation, and `pre-commit-review` before an authorized commit. Skip a missing skill with an explicit note; do not install tools or download replacements automatically.
+Read `.agents/skills/README.md` when selecting a procedure, then load only the matching `SKILL.md` by its relative path. Do not assume native discovery or load all skills on startup. Use `debugging` for failures, `code-simplifier` for one bounded pass over task-owned changes before final validation, `performance-optimizer` for a measured slowness, and `pre-commit-review` before an authorized commit. Skip a missing skill with an explicit note; do not install tools or download replacements automatically.
 
 ## Project context
 

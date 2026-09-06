@@ -61,7 +61,7 @@ Esse script prepara um repositório para seguir a mesma estrutura, criando:
 - `.agents/decisions/`
 - `.agents/BOOTSTRAP.md`, roteiro de primeira sessão
 - `.agents/TEMPLATE_ORIGIN`, registro da origem dos arquivos instalados
-- `.agents/skills/`, procedimentos de simplificação, investigação de bugs e revisão pré-commit
+- `.agents/skills/`, procedimentos de simplificação, investigação de bugs, otimização de desempenho e revisão pré-commit
 
 Sem sobrescrever arquivos, diretórios ou symlinks existentes. Adoção instala a estrutura; não declara o projeto pronto. Na primeira sessão, peça ao agente para seguir `.agents/BOOTSTRAP.md`: investigar o projeto, preencher somente fatos verificados, remover exemplos e executar as validações aplicáveis. Depois, o bootstrap não precisa ser carregado rotineiramente.
 
@@ -113,9 +113,12 @@ O diretório canônico é `.agents/skills/`, não `.skills/` na raiz. O Codex do
 O conjunto inicial é enxuto:
 - `code-simplifier`: uma passagem delimitada sobre o código da tarefa, preservando comportamento, antes da validação final.
 - `debugging`: reprodução e evidência antes da correção.
+- `performance-optimizer`: medição, gargalo dominante e nova medição diante de lentidão relatada.
 - `pre-commit-review`: revisão e validação antes de um commit autorizado.
 
 Essas skills são implementações próprias deste kit. O [repositório sugerido](https://github.com/lyen1688/code-simplifier), revisado na revisão `b6c8c2a027236e33f76573c280a9418ee1445889`, serviu como referência de objetivo, não como conteúdo copiado: não declara licença e seu procedimento inclui preferências específicas de JavaScript/React e simplificação proativa.
+
+O mesmo vale para `performance-optimizer`: [`sickn33/agentic-awesome-skills`](https://github.com/sickn33/agentic-awesome-skills) (MIT), revisão `34aa7130c381eb078aa2dbd433dd130cf286c191`, arquivo `skills/performance-optimizer/SKILL.md`, foi referência de objetivo. O conteúdo original é um catálogo de receitas de JavaScript, React, Node e SQL; aqui o procedimento é neutro de stack e exige linha de base, gargalo atribuído e nova medição.
 
 Cada skill declara gatilho, procedimento, limites e verificação. Leia somente a que se aplica. Skills extras devem responder a uma necessidade real e ter origem, licença e permissões revisadas; adoção não baixa código remoto nem executa instaladores.
 
