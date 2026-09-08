@@ -69,6 +69,7 @@ Verify a project:    ./check.sh <project-dir>
 - `templates/AGENTS.project.md` deliberately restates rules from `AGENTS.md`; the mirrored sections are mapped in `templates/README.md` and drift silently if only one side is edited.
 - Adopted files are independent copies. `template-diff.sh` compares them without overwriting local rules; provenance is inert text, not an executable configuration.
 - `.agents/skills/` holds on-demand procedures. Native discovery differs by tool; the template instructs agents to read matching files explicitly.
+- The shipped skill set is derived from `templates/skills/*/SKILL.md` by `adopt.sh`, `template-diff.sh` and `test-scripts.sh`; adding a skill means one directory plus its `templates/skills/README.md` row (`check.sh` enforces the index).
 - `check.sh` checks installed skill links, required scalar fields/body and ignored assets; it is not a full Markdown/YAML parser. Supported forms are in `templates/skills/README.md`.
 - `templates/BOOTSTRAP.md` is first-session guidance, not routine context. Rules live in project `AGENTS.md`; commands and architecture live in memory only.
 - `check.sh` thresholds (400/1200) are calibrated on two adopted projects, not derived. Treat a failure as a question, not a verdict.

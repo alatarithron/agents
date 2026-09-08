@@ -7,10 +7,24 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEST="${1:?usage: adopt.sh <project-dir>}"
 DEST="$(cd -- "$DEST" && pwd)"
 
+# The shipped skill set is whatever lives under templates/skills/<name>/SKILL.md.
+shopt -s nullglob
+skills=("$ROOT"/templates/skills/*/SKILL.md)
+shopt -u nullglob
+if [ "${#skills[@]}" -eq 0 ]; then
+  printf 'ERROR: no skill templates under %s/templates/skills\n' "$ROOT" >&2
+  exit 1
+fi
+skills=("${skills[@]%/SKILL.md}")
+skills=("${skills[@]##*/}")
+
 # Preflight every directory we write through before making any changes.
-directories=(.agents .agents/decisions .agents/skills
-  .agents/skills/code-simplifier .agents/skills/debugging
-  .agents/skills/performance-optimizer .agents/skills/pre-commit-review)
+directories=(.agents .agents/decisions .agents/skills)
+templates=(AGENTS.project.md PROJECT_MEMORY.md BOOTSTRAP.md skills/README.md)
+for skill in "${skills[@]}"; do
+  directories+=(".agents/skills/$skill")
+  templates+=("skills/$skill/SKILL.md")
+done
 for relative in "${directories[@]}"; do
   dir="$DEST/$relative"
   if [ -L "$dir" ] || { [ -e "$dir" ] && [ ! -d "$dir" ]; }; then
@@ -18,9 +32,6 @@ for relative in "${directories[@]}"; do
     exit 1
   fi
 done
-templates=(AGENTS.project.md PROJECT_MEMORY.md BOOTSTRAP.md skills/README.md
-  skills/code-simplifier/SKILL.md skills/debugging/SKILL.md
-  skills/performance-optimizer/SKILL.md skills/pre-commit-review/SKILL.md)
 for template in "${templates[@]}"; do
   if [ ! -f "$ROOT/templates/$template" ]; then
     printf 'ERROR: missing template: %s\n' "$ROOT/templates/$template" >&2
@@ -67,7 +78,7 @@ copy templates/AGENTS.project.md AGENTS.md
 copy templates/PROJECT_MEMORY.md .agents/PROJECT_MEMORY.md
 copy templates/BOOTSTRAP.md .agents/BOOTSTRAP.md
 copy templates/skills/README.md .agents/skills/README.md
-for skill in code-simplifier debugging performance-optimizer pre-commit-review; do
+for skill in "${skills[@]}"; do
   copy "templates/skills/$skill/SKILL.md" ".agents/skills/$skill/SKILL.md"
 done
 

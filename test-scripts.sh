@@ -13,9 +13,13 @@ printf '# Bootstrap fixture\n' > "$TMP/source/templates/BOOTSTRAP.md"
 SRC="$TMP/source"
 mkdir -p "$SRC/templates/skills"
 printf '# Skill fixtures\n' > "$SRC/templates/skills/README.md"
-for skill in code-simplifier debugging performance-optimizer pre-commit-review; do
+# A set that differs from the shipped one, so adopt.sh must derive it, not list it.
+fixture_skills=(debugging fixture-skill)
+fixture_skill_files=(skills/README.md)
+for skill in "${fixture_skills[@]}"; do
   mkdir -p "$SRC/templates/skills/$skill"
   printf '# %s fixture\n' "$skill" > "$SRC/templates/skills/$skill/SKILL.md"
+  fixture_skill_files+=("skills/$skill/SKILL.md")
 done
 PROJECT="$TMP/project with spaces"
 fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
@@ -91,14 +95,14 @@ printf '$(touch %s)\n' "$TMP/executed" >> "$TMP/fresh/.agents/TEMPLATE_ORIGIN"
 bash "$SRC/template-diff.sh" "$TMP/fresh" > "$TMP/diff"
 [[ ! -e "$TMP/executed" ]] || fail 'provenance executed'
 pass 'read-only template comparison, legacy fallback and local git baselines'
-for relative in skills/README.md skills/code-simplifier/SKILL.md skills/debugging/SKILL.md skills/performance-optimizer/SKILL.md skills/pre-commit-review/SKILL.md; do
+for relative in "${fixture_skill_files[@]}"; do
   cmp "$SRC/templates/$relative" "$PROJECT/.agents/$relative" || fail "skill missing: $relative"
   grep -qF "$relative" "$PROJECT/.agents/TEMPLATE_ORIGIN" || fail 'skill provenance missing'
 done
 printf 'Local skill\n' > "$PROJECT/.agents/skills/debugging/SKILL.md"
 bash "$SRC/adopt.sh" "$PROJECT" > "$TMP/log"
 [[ "$(< "$PROJECT/.agents/skills/debugging/SKILL.md")" = 'Local skill' ]] || fail 'skill overwritten'
-for relative in skills skills/debugging skills/code-simplifier skills/performance-optimizer skills/pre-commit-review decisions; do
+for relative in skills "${fixture_skills[@]/#/skills/}" decisions; do
   unsafe="$TMP/unsafe-${relative//\//-}"
   mkdir -p "$unsafe/.agents/$(dirname "$relative")"
   ln -s "$TMP/outside" "$unsafe/.agents/$relative"
@@ -150,7 +154,8 @@ pass 'broken parents, skill comparison and optional Git'
 # Exercise the actual shipped templates too, not only tiny test fixtures.
 mkdir "$TMP/shipped-project"
 bash "$ROOT/adopt.sh" "$TMP/shipped-project" > "$TMP/log"
-for relative in BOOTSTRAP.md PROJECT_MEMORY.md skills/README.md skills/code-simplifier/SKILL.md skills/debugging/SKILL.md skills/performance-optimizer/SKILL.md skills/pre-commit-review/SKILL.md; do
+shipped=(BOOTSTRAP.md PROJECT_MEMORY.md skills/README.md "$ROOT"/templates/skills/*/SKILL.md)
+for relative in "${shipped[@]#"$ROOT/templates/"}"; do
   cmp "$ROOT/templates/$relative" "$TMP/shipped-project/.agents/$relative" || fail "shipped template mismatch: $relative"
 done
 bash "$ROOT/template-diff.sh" "$TMP/shipped-project" > "$TMP/diff"
@@ -162,18 +167,6 @@ while IFS=$'\t' read -r kind relative source blob; do
   [[ "$blob" = "$expected" ]] || fail "source blob mismatch: $relative"
 done < "$TMP/shipped-project/.agents/TEMPLATE_ORIGIN"
 pass 'shipped template integration'
-# Shipped skills intentionally use simple, single-line YAML scalar fields.
-for skill in code-simplifier debugging performance-optimizer pre-commit-review; do
-  awk -v name="$skill" '
-    NR == 1 { if ($0 != "---") exit 1; next }
-    $0 == "---" && !closed { closed = 1; next }
-    !closed && $0 == "name: " name { named = 1 }
-    !closed && /^description: .+/ { described = 1 }
-    closed && /[^[:space:]]/ { body = 1 }
-    END { if (!closed || !named || !described || !body) exit 1 }
-  ' "$ROOT/templates/skills/$skill/SKILL.md" || fail "invalid shipped skill: $skill"
-done
-pass 'shipped skill frontmatter and bodies'
 # Never append through a persona symlink into another profile or external file.
 printf 'External persona\n' > "$TMP/external-soul"
 mkdir "$TMP/linked-profile"

@@ -4,7 +4,14 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEST="${1:?usage: template-diff.sh <project-dir>}"
 DEST="$(cd -- "$DEST" && pwd)"
-for relative in .agents .agents/skills .agents/skills/code-simplifier .agents/skills/debugging .agents/skills/pre-commit-review; do
+shopt -s nullglob
+skills=("$ROOT"/templates/skills/*/SKILL.md)
+shopt -u nullglob
+skills=("${skills[@]%/SKILL.md}")
+skills=("${skills[@]##*/}")
+directories=(.agents .agents/skills)
+for skill in "${skills[@]}"; do directories+=(".agents/skills/$skill"); done
+for relative in "${directories[@]}"; do
   dir="$DEST/$relative"
   if [ -L "$dir" ] || { [ -e "$dir" ] && [ ! -d "$dir" ]; }; then
     printf 'ERROR: expected a real directory: %s\n' "$dir" >&2
@@ -68,7 +75,7 @@ report AGENTS.md templates/AGENTS.project.md
 report .agents/PROJECT_MEMORY.md templates/PROJECT_MEMORY.md
 report .agents/BOOTSTRAP.md templates/BOOTSTRAP.md
 report .agents/skills/README.md templates/skills/README.md
-for skill in code-simplifier debugging pre-commit-review; do
+for skill in "${skills[@]}"; do
   report ".agents/skills/$skill/SKILL.md" "templates/skills/$skill/SKILL.md"
 done
 # Differences are informational (0); operational errors return nonzero.
