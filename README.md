@@ -3,6 +3,7 @@
 Minha base pessoal para trabalhar com assistentes de IA e agentes de código.
 
 Aqui eu concentro três coisas:
+
 - minhas preferências canônicas de trabalho
 - templates para adotar esse padrão em outros repositórios
 - material de referência para manter tudo consistente
@@ -55,6 +56,7 @@ Os caminhos de `reference/` são relativos ao arquivo canônico real, após reso
 ```
 
 Esse script prepara um repositório para seguir a mesma estrutura, criando:
+
 - `AGENTS.md` na raiz
 - `CLAUDE.md` apontando para ele
 - `.agents/PROJECT_MEMORY.md`
@@ -93,7 +95,6 @@ Entrada única para agentes e CI: sintaxe Bash, ShellCheck, as duas suítes e `c
 
 Cada caso monta um projeto de mentira, quebra exatamente uma coisa e exige que o `check.sh` reporte — mais um caso que não quebra nada e exige silêncio. Um check que para de ler continua imprimindo `ok`, e isso é indistinguível de um check que funciona.
 
-
 ### 4. Comparação dos templates
 
 ```bash
@@ -111,6 +112,7 @@ O manifesto existente nunca é atualizado na readoção. Arquivos acrescentados 
 O diretório canônico é `.agents/skills/`, não `.skills/` na raiz. O Codex documenta descoberta nesse caminho; outros agentes podem ler os arquivos explicitamente pelo ponteiro no `AGENTS.md`. Não presumimos descoberta nativa universal nem instalamos nada nos diretórios globais das ferramentas.
 
 O conjunto inicial é enxuto:
+
 - `code-simplifier`: uma passagem delimitada sobre o código da tarefa, preservando comportamento, antes da validação final.
 - `debugging`: reprodução e evidência antes da correção.
 - `performance-optimizer`: medição, gargalo dominante e nova medição diante de lentidão relatada.
@@ -133,6 +135,7 @@ O workflow `.github/workflows/validate.yml` instala ShellCheck e chama o mesmo `
 ## Prioridade das instruções
 
 Quando houver conflito:
+
 1. pedido explícito e atual do usuário
 2. regras específicas do projeto
 3. preferências pessoais deste repositório
@@ -155,6 +158,7 @@ Ele não deve guardar credenciais, tokens, segredos, fatos temporários ou conte
 ## Futuro
 
 Com o tempo, quero evoluir este espaço com calma:
+
 - melhorar os templates
 - refinar as regras com base no uso real
 - manter decisões e memória de projeto mais organizadas

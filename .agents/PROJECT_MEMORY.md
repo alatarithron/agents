@@ -17,12 +17,12 @@
 
 ## Domain language
 
-| Term | Meaning |
-| --- | --- |
-| canonical file | The root `AGENTS.md`, source of truth for personal rules. |
+| Term            | Meaning                                                                  |
+| --------------- | ------------------------------------------------------------------------ |
+| canonical file  | The root `AGENTS.md`, source of truth for personal rules.                |
 | adopted project | A repository carrying `AGENTS.md` + `.agents/`, installed by `adopt.sh`. |
-| entry form | The per-item size limit on memory entries; measured by `check.sh`. |
-| baseline | A falsifiable expectation with a date, as opposed to a run result. |
+| entry form      | The per-item size limit on memory entries; measured by `check.sh`.       |
+| baseline        | A falsifiable expectation with a date, as opposed to a run result.       |
 
 ## Invariants
 
@@ -46,7 +46,6 @@ Lint:                shellcheck ./*.sh
 Verify a project:    ./check.sh <project-dir>
 ```
 
-
 ## Conventions
 
 - Portuguese in `README.md` and `reference/`; English in `AGENTS.md` and `templates/`, which live inside code repositories.
@@ -54,9 +53,9 @@ Verify a project:    ./check.sh <project-dir>
 
 ## External integrations
 
-| Integration | Purpose | Contract or documentation | Failure considerations |
-| --- | --- | --- | --- |
-| Global tool files | Deliver the canonical rules to each tool | `wire.sh` | A tool that reads a regular file instead of a symlink is skipped, never overwritten. |
+| Integration       | Purpose                                  | Contract or documentation | Failure considerations                                                               |
+| ----------------- | ---------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------ |
+| Global tool files | Deliver the canonical rules to each tool | `wire.sh`                 | A tool that reads a regular file instead of a symlink is skipped, never overwritten. |
 
 ## Active architectural decisions
 

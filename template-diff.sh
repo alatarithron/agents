@@ -59,8 +59,8 @@ report() {
       fi
     done < "$origin"
   fi
-  if [ "$matches" -eq 1 ] && [ -n "$blob" ] && command -v git >/dev/null 2>&1 &&
-    [ "$(git -C "$ROOT" cat-file -t "$blob" 2>/dev/null || true)" = blob ]; then
+  if [ "$matches" -eq 1 ] && [ -n "$blob" ] && command -v git > /dev/null 2>&1 \
+    && [ "$(git -C "$ROOT" cat-file -t "$blob" 2> /dev/null || true)" = blob ]; then
     printf '%s\n' '--- baseline -> adopted (local edits) ---'
     compare <(git -C "$ROOT" cat-file blob "$blob") "$adopted" "baseline/$relative" "adopted/$relative"
     printf '%s\n' '--- baseline -> current template (template changes) ---'

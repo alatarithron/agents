@@ -1,0 +1,30 @@
+// The markdown gate for the kit's own documents.
+//
+// Prettier owns layout here (`.prettierrc`), so this file's whole job is the
+// half Prettier cannot see: structure that renders wrong, links that go
+// nowhere, text that silently disappears.
+//
+// ⚠️ **Every rule turned off below is turned off with its reason.** A rule
+// disabled in silence is a rule nobody can re-enable later, because nobody
+// knows what it cost.
+{
+  "config": {
+    "default": true,
+
+    // Prettier's half, not ours. MD013 is the ONLY rule this repository's 19
+    // documents trip, 347 times, and every one of them is Prettier's call:
+    // `proseWrap: "preserve"` keeps the hand-wrapped prose intact, and the
+    // longest lines here are tables Prettier pads to its own widest cell. Two
+    // tools with an opinion about width is one tool too many.
+    "line-length": false,
+  },
+
+  "globs": ["**/*.md"],
+
+  // `.gitignore` is honoured below; this is belt and braces. A stray
+  // `node_modules` must not become thousands of findings nobody reads, which
+  // is how a gate stops being read at all.
+  "ignores": ["node_modules/**"],
+
+  "gitignore": true,
+}

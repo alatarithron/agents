@@ -1,0 +1,59 @@
+# The gate on the instruction files.
+#
+# ⚠️ **This file is the whole point of `check.sh` existing.** Run by hand, the
+# check is one nobody remembers: it reports correctly, the failure scrolls past,
+# and the instruction files drift for months with the answer sitting in a script
+# nobody ran. That is not hypothetical — a project in this ecosystem reached a
+# `PROJECT_MEMORY.md` of 132 KB whose `Current state:` entry was a **single line
+# of 77.609 characters**, against a policy limit of ~300 per entry, while
+# `check.sh` had been diagnosing it correctly the entire time.
+#
+# If this project is not on GitHub Actions, delete this file and wire the same
+# command into whatever runs on every change. The gate matters, the runner does
+# not.
+name: agent policy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  agent-policy:
+    name: instruction files within policy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # ⚠️ **The kit is pinned to a commit, never to a branch.** `check.sh` is
+      # the definition of this gate, and a definition that moves on someone
+      # else's push turns THIS repository red for a change made in another one,
+      # with nothing in this history to explain it. Bumping is a commit here,
+      # which is also what makes the diff of the rules reviewable.
+      #
+      # Replace the ref below with the commit you adopted from — it is recorded
+      # in `.agents/TEMPLATE_ORIGIN`.
+      - name: The agent kit, pinned
+        uses: actions/checkout@v4
+        with:
+          repository: alatarithron/agents
+          ref: REPLACE_WITH_THE_ADOPTED_COMMIT
+          path: .agent-kit
+
+      # `check.sh` reads the checkout's own git work tree to tell a versioned
+      # memory from one `.gitignore` quietly swallows, so it runs against `.`
+      # and never against a copy.
+      #
+      # ⚠️ **The thresholds belong here, not in the kit.** The kit's defaults
+      # are the floor for every project that adopts it; this is where a project
+      # says how tight it actually keeps its own memory. Start at the policy's
+      # own numbers and only loosen them with a reason written in the diff.
+      - name: check.sh
+        env:
+          MEM_WARN: 300
+          MEM_FAIL: 500
+        run: .agent-kit/check.sh .

@@ -22,5 +22,10 @@ jobs:
           persist-credentials: false
       - name: Install ShellCheck
         run: sudo apt-get update && sudo apt-get install --yes shellcheck
+      # The formatter and the markdown linter are npm tools, pinned by the
+      # lockfile. `validate.sh` refuses to run without them rather than
+      # skipping the two gates in silence.
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
       - name: Validate agent kit
         run: ./validate.sh

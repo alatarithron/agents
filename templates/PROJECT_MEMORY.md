@@ -21,7 +21,7 @@ Keep this to what is not obvious from the directory layout.
 ## Domain language
 
 | Term | Meaning |
-| --- | --- |
+| ---- | ------- |
 
 Only terms whose meaning is specific to this project.
 
@@ -63,7 +63,7 @@ Do not duplicate what a formatter, linter, or compiler already enforces.
 ## External integrations
 
 | Integration | Purpose | Contract or documentation | Failure considerations |
-| --- | --- | --- | --- |
+| ----------- | ------- | ------------------------- | ---------------------- |
 
 Never include credentials or real production payloads.
 
@@ -85,3 +85,7 @@ Detailed context, alternatives, and consequences belong in the decision record, 
 ## Maintenance
 
 Update this file in the same change-set that makes it inaccurate. Remove obsolete information instead of keeping an informal changelog; Git already stores the history.
+
+⚠️ **No "current state" entry.** It is the one that grows by accretion — a line nobody rewrites and everybody appends to, one delivered feature at a time. Each addition is small and reasonable; the sum is not. One project reached a single entry of **77.609 characters** that way.
+
+⚠️ **A date inside an entry is the tell.** If the sentence needs to say _when_, it belongs in `decisions/`, and what stays here is the fact it left behind. An entry is one fact with a pointer, inside about 300 characters; `check.sh` measures it and `.github/workflows/agent-policy.yml` runs `check.sh`.

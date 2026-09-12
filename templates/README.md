@@ -2,13 +2,13 @@
 
 Arquivos copiados para outros repositórios por `../adopt.sh`.
 
-| Arquivo | Destino no projeto | Copiado por `adopt.sh` |
-| --- | --- | --- |
-| `AGENTS.project.md` | `AGENTS.md` (raiz) | sim |
-| `PROJECT_MEMORY.md` | `.agents/PROJECT_MEMORY.md` | sim |
-| `skills/` | `.agents/skills/` | sim, procedimentos carregados sob demanda |
-| `BOOTSTRAP.md` | `.agents/BOOTSTRAP.md` | sim, somente para a primeira sessão |
-| `DECISION.md` | `.agents/decisions/NNN-titulo.md` | não, uso manual |
+| Arquivo             | Destino no projeto                | Copiado por `adopt.sh`                    |
+| ------------------- | --------------------------------- | ----------------------------------------- |
+| `AGENTS.project.md` | `AGENTS.md` (raiz)                | sim                                       |
+| `PROJECT_MEMORY.md` | `.agents/PROJECT_MEMORY.md`       | sim                                       |
+| `skills/`           | `.agents/skills/`                 | sim, procedimentos carregados sob demanda |
+| `BOOTSTRAP.md`      | `.agents/BOOTSTRAP.md`            | sim, somente para a primeira sessão       |
+| `DECISION.md`       | `.agents/decisions/NNN-titulo.md` | não, uso manual                           |
 
 Este arquivo não é copiado para projeto nenhum. `adopt.sh` também registra a origem em `.agents/TEMPLATE_ORIGIN`; esse registro não contém regras e nunca deve ser executado.
 
@@ -20,13 +20,13 @@ Este arquivo não é copiado para projeto nenhum. `adopt.sh` também registra a 
 
 As seções abaixo espelham o `../AGENTS.md` e precisam ser atualizadas junto com ele:
 
-| Seção do template | Origem em `../AGENTS.md` |
-| --- | --- |
+| Seção do template                                                | Origem em `../AGENTS.md`                                            |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------- |
 | Working rules (idioma, escopo, segredos, conteúdo não confiável) | Language, Way of working, Environment and safety, Untrusted content |
-| Tests and validation | Tests: approval-first workflow for new features |
-| Git and CI | Git, commits, push, and CI |
-| Project memory | Project memory |
-| Project skills | Project skills |
+| Tests and validation                                             | Tests: approval-first workflow for new features                     |
+| Git and CI                                                       | Git, commits, push, and CI                                          |
+| Project memory                                                   | Project memory                                                      |
+| Project skills                                                   | Project skills                                                      |
 
 O texto não é idêntico por construção — o canônico fala em primeira pessoa ("me", "my"), o template fala do usuário em terceira pessoa. Comparar por conteúdo, não por diff literal.
 

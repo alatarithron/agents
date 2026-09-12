@@ -21,9 +21,15 @@ indent() {
     if [ -n "$l" ]; then printf '        %s\n' "$l"; fi
   done
 }
-err()  { echo "FAIL: $*"; errors=$((errors + 1)); }
-warn() { echo "WARN: $*"; warnings=$((warnings + 1)); }
-ok()   { echo "ok:   $*"; }
+err() {
+  echo "FAIL: $*"
+  errors=$((errors + 1))
+}
+warn() {
+  echo "WARN: $*"
+  warnings=$((warnings + 1))
+}
+ok() { echo "ok:   $*"; }
 
 AGENTS="$DEST/AGENTS.md"
 MEM="$DEST/.agents/PROJECT_MEMORY.md"
@@ -98,10 +104,10 @@ check_skill() {
 
 # --- structure ---------------------------------------------------------------
 [ -f "$AGENTS" ] || err "missing $AGENTS"
-[ -f "$MEM" ]    || err "missing $MEM"
+[ -f "$MEM" ] || err "missing $MEM"
 [ -d "$DECISIONS" ] || warn "missing $DECISIONS (no decision records yet)"
 
-if command -v git >/dev/null 2>&1 && git -C "$DEST" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+if command -v git > /dev/null 2>&1 && git -C "$DEST" rev-parse --is-inside-work-tree > /dev/null 2>&1; then
   # Ask Git about effective rules (including parent/nested ignore files,
   # exclusions and negations), even for files already tracked in the index.
   paths=(AGENTS.md .agents/PROJECT_MEMORY.md .agents/decisions/)
@@ -135,8 +141,8 @@ if command -v git >/dev/null 2>&1 && git -C "$DEST" rev-parse --is-inside-work-t
 elif [ -f "$DEST/.gitignore" ]; then
   # Outside Git, only reject unambiguous whole-directory exclusions without
   # negations. Do not pretend to implement Git glob/precedence semantics.
-  if grep -Eq '^/?\.agents/?[[:space:]]*$' "$DEST/.gitignore" &&
-     ! grep -q '^!' "$DEST/.gitignore"; then
+  if grep -Eq '^/?\.agents/?[[:space:]]*$' "$DEST/.gitignore" \
+    && ! grep -q '^!' "$DEST/.gitignore"; then
     err ".agents is in .gitignore — the memory must be versioned"
   elif grep -Eq '^[^#![:space:]]' "$DEST/.gitignore"; then
     warn "outside a git work tree: effective ignore rules cannot be verified"
@@ -175,8 +181,8 @@ if [ -e "$SKILLS" ] || [ -L "$SKILLS" ]; then
             continue
           fi
           name="${target%/SKILL.md}"
-          if [ -L "$SKILLS/$name" ] || [ ! -d "$SKILLS/$name" ] ||
-             [ -L "$SKILLS/$target" ] || [ ! -f "$SKILLS/$target" ]; then
+          if [ -L "$SKILLS/$name" ] || [ ! -d "$SKILLS/$name" ] \
+            || [ -L "$SKILLS/$target" ] || [ ! -f "$SKILLS/$target" ]; then
             err "skill index target is not an existing regular non-symlink file: $target"
             continue
           fi
@@ -203,7 +209,10 @@ if [ -e "$SKILLS" ] || [ -L "$SKILLS" ]; then
       fi
       found=0
       for link in "${indexed[@]}"; do
-        if [ "$link" = "$target" ]; then found=1; break; fi
+        if [ "$link" = "$target" ]; then
+          found=1
+          break
+        fi
       done
       if [ "$found" -eq 0 ]; then err "skill is not indexed in .agents/skills/README.md: $target"; fi
       check_skill "$path" "${target%/SKILL.md}"
@@ -211,7 +220,11 @@ if [ -e "$SKILLS" ] || [ -L "$SKILLS" ]; then
   fi
 fi
 
-[ "$errors" -eq 0 ] || { echo; echo "$errors error(s), $warnings warning(s)"; exit 1; }
+[ "$errors" -eq 0 ] || {
+  echo
+  echo "$errors error(s), $warnings warning(s)"
+  exit 1
+}
 
 # --- placeholders left behind ------------------------------------------------
 # Include legacy AGENTS fields: adopted copies do not change with the template.
@@ -312,7 +325,7 @@ if [ -d "$DECISIONS" ]; then
   files=$(find "$DECISIONS" -maxdepth 1 -type f -name '*.md' -printf '%f\n' | sed 's/\.md$//' | sort)
 fi
 # No matches is normal; grep status 1 must not abort under pipefail.
-linked=$( { grep -oE 'decisions/[0-9]{3}-[a-z0-9-]+\.md' "$MEM" || [ "$?" -eq 1 ]; } | sed 's|decisions/||;s|\.md$||' | sort -u)
+linked=$({ grep -oE 'decisions/[0-9]{3}-[a-z0-9-]+\.md' "$MEM" || [ "$?" -eq 1 ]; } | sed 's|decisions/||;s|\.md$||' | sort -u)
 
 orphans=$(comm -23 <(echo "$files") <(echo "$linked") | grep -v '^$' || true)
 broken=$(comm -13 <(echo "$files") <(echo "$linked") | grep -v '^$' || true)
@@ -329,11 +342,31 @@ if [ -z "$broken$orphans" ]; then
   ok "$(printf '%s\n' "$files" | awk 'NF {n++} END {print n+0}') decision record(s), all cross-referenced"
 fi
 
-# a record without Status/Date is not usable later
+# A record without Status/Date is not usable later.
+#
+# ⚠️ **"Missing" and "written another way" are different findings**, and saying
+# the first when the second is true sends the reader to write a field that is
+# already there. A real case: eight records carried `- **Status:**` in bold,
+# this check reported sixteen missing fields, and the fix was to unbold rather
+# than to research eight dates.
+header_field() {
+  local file="$1" field="$2" name="$3"
+  if grep -q "^- $field:" "$file"; then return 0; fi
+  local drifted
+  # Same field, another spelling: bold, emphasis, extra spaces, any case.
+  drifted=$(grep -im1 "^[-*+][[:space:]]*[*_]*[[:space:]]*${field}[[:space:]]*[*_]*:" "$file" || true)
+  if [ -n "$drifted" ]; then
+    warn "$name writes $field another way — the template's form is '- $field:'"
+    printf '        %s\n' "$(printf '%s' "$drifted" | cut -c1-72)"
+  else
+    warn "$name has no $field line"
+  fi
+}
+
 while IFS= read -r f; do
   [ -n "$f" ] || continue
-  grep -q '^- Status:' "$DECISIONS/$f.md" || warn "$f.md has no Status line"
-  grep -q '^- Date:'   "$DECISIONS/$f.md" || warn "$f.md has no Date line"
+  header_field "$DECISIONS/$f.md" Status "$f.md"
+  header_field "$DECISIONS/$f.md" Date "$f.md"
 done <<< "$files"
 
 # --- baselines must carry a date (policy: baseline vs run result) ------------
@@ -346,7 +379,7 @@ if grep -qiE '(tests? (green|passing)|testes verdes|[0-9]+ (tests?|testes))' "$M
 fi
 
 # --- secrets -----------------------------------------------------------------
-if grep -rInE '(password|secret|api[_-]?key|token)\s*[:=]\s*["'"'"'][^"'"'"']{8,}' "$AGENTS" "$MEM" >/dev/null 2>&1; then
+if grep -rInE '(password|secret|api[_-]?key|token)\s*[:=]\s*["'"'"'][^"'"'"']{8,}' "$AGENTS" "$MEM" > /dev/null 2>&1; then
   err "possible credential in AGENTS.md or PROJECT_MEMORY.md"
 else
   ok "no credential-shaped strings in the instruction files"

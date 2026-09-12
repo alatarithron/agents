@@ -1,0 +1,6 @@
+# Vendored by the package manager; formatting it changes nothing and hides the
+# diff that matters.
+node_modules
+
+# ⚠️ The lockfile is the package manager's format, not ours.
+bun.lock

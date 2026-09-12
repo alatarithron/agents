@@ -25,7 +25,7 @@ fixture() {
   rm -rf "$d"
   mkdir -p "$d/.agents/decisions"
 
-  cat > "$d/AGENTS.md" <<'EOF'
+  cat > "$d/AGENTS.md" << 'EOF'
 # Instructions for AI agents
 
 ## Repository-specific information
@@ -37,7 +37,7 @@ fixture() {
 - Test command: `true`
 EOF
 
-  cat > "$d/.agents/PROJECT_MEMORY.md" <<'EOF'
+  cat > "$d/.agents/PROJECT_MEMORY.md" << 'EOF'
 # Project memory
 
 ## Commands
@@ -49,7 +49,7 @@ Verificado em 2026-08-24, bash 5.2: `true` (12 tests green).
 - [Only one](decisions/001-only-one.md)
 EOF
 
-  cat > "$d/.agents/decisions/001-only-one.md" <<'EOF'
+  cat > "$d/.agents/decisions/001-only-one.md" << 'EOF'
 # Architectural decision: only one
 
 - Status: accepted
@@ -62,7 +62,8 @@ EOF
 expect() {
   local name="$1" want_code="$2" want="$3" out code
   CASES=$((CASES + 1))
-  out="$("$ROOT/check.sh" "$WORK/p" 2>&1)"; code=$?
+  out="$("$ROOT/check.sh" "$WORK/p" 2>&1)"
+  code=$?
 
   if [ "$code" -ne "$want_code" ]; then
     printf '  FAIL  %s — exit %d, expected %d\n' "$name" "$code" "$want_code"
@@ -84,20 +85,25 @@ echo "check.sh"
 p="$(fixture)"
 expect "clean fixture passes" 0 "passed with 0 warning"
 
-p="$(fixture)"; rm "$p/AGENTS.md"
+p="$(fixture)"
+rm "$p/AGENTS.md"
 expect "missing AGENTS.md" 1 "missing"
 
-p="$(fixture)"; rm "$p/.agents/PROJECT_MEMORY.md"
+p="$(fixture)"
+rm "$p/.agents/PROJECT_MEMORY.md"
 expect "missing PROJECT_MEMORY.md" 1 "missing"
 
-p="$(fixture)"; rm -rf "$p/.agents/decisions"
+p="$(fixture)"
+rm -rf "$p/.agents/decisions"
 expect "missing decisions/ with a linked ADR fails" 1 "do not exist"
 
-p="$(fixture)"; rm -rf "$p/.agents/decisions"
+p="$(fixture)"
+rm -rf "$p/.agents/decisions"
 printf '# Project memory\n\nNo decisions yet.' > "$p/.agents/PROJECT_MEMORY.md"
 expect "missing decisions/ without links warns only" 0 "passed with 1 warning"
 
-p="$(fixture)"; rm "$p/.agents/decisions/001-only-one.md"
+p="$(fixture)"
+rm "$p/.agents/decisions/001-only-one.md"
 printf '# Project memory\n\nNo decisions yet.' > "$p/.agents/PROJECT_MEMORY.md"
 expect "empty decisions/ without links completes" 0 "passed with 0 warning"
 
@@ -109,7 +115,8 @@ p="$(fixture)"
 printf '\n- [Ghost](decisions/002-ghost.md)' >> "$p/.agents/PROJECT_MEMORY.md"
 expect "missing ADR on final unterminated line" 1 "002-ghost"
 
-p="$(fixture)"; cp "$ROOT/templates/PROJECT_MEMORY.md" "$p/.agents/PROJECT_MEMORY.md"
+p="$(fixture)"
+cp "$ROOT/templates/PROJECT_MEMORY.md" "$p/.agents/PROJECT_MEMORY.md"
 expect "untouched memory template fails" 1 "empty placeholders"
 
 for field in 'Primary goal' 'Explicit non-goals' 'Intended users' \
@@ -154,45 +161,55 @@ expect "AGENTS example rule fails" 1 "template guidance"
 # A freshly adopted project: decisions/ exists, nothing in it, and the memory
 # links nothing. grep finds no link and exits 1; under `set -e` + `pipefail`
 # that used to kill check.sh silently before the summary.
-p="$(fixture)"; rm "$p/.agents/decisions/001-only-one.md"
+p="$(fixture)"
+rm "$p/.agents/decisions/001-only-one.md"
 sed -i 's/^- \[Only one\].*/- No architectural decisions yet./' "$p/.agents/PROJECT_MEMORY.md"
 expect "fresh adoption with no decision links" 0 "0 decision record(s), all cross-referenced"
 
-p="$(fixture)"; echo ".agents/" > "$p/.gitignore"
+p="$(fixture)"
+echo ".agents/" > "$p/.gitignore"
 expect "memory excluded outside git" 1 "must be versioned"
 
-p="$(fixture)"; printf '# /.agents/ is versioned\n!.agents/\n' > "$p/.gitignore"
+p="$(fixture)"
+printf '# /.agents/ is versioned\n!.agents/\n' > "$p/.gitignore"
 expect "comments and negations outside git pass" 0 "passed with 0 warning"
 
-p="$(fixture)"; printf '.agents/\n!.agents/\n' > "$p/.gitignore"
+p="$(fixture)"
+printf '.agents/\n!.agents/\n' > "$p/.gitignore"
 expect "ambiguous ignore rules outside git warn" 0 "effective ignore rules cannot be verified"
 
 # Isolate Git from the users configuration without changing their home.
 export GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null
 for pattern in '.agents/' '*.md' '.agents/PROJECT_MEMORY.md' '.agents/decisions/*.md' 'AGENTS.md'; do
-  p="$(fixture)"; git -C "$p" init -q
+  p="$(fixture)"
+  git -C "$p" init -q
   printf '%s' "$pattern" > "$p/.gitignore"
   expect "git effectively ignores $pattern (no newline)" 1 "must be versioned"
 done
 
-p="$(fixture)"; git -C "$p" init -q
+p="$(fixture)"
+git -C "$p" init -q
 printf '# /.agents/ is versioned\n*.md\n!AGENTS.md\n!.agents/PROJECT_MEMORY.md\n!.agents/decisions/*.md\n' > "$p/.gitignore"
 expect "git honours negations and comments" 0 "passed with 0 warning"
 
-p="$(fixture)"; git -C "$p" init -q
+p="$(fixture)"
+git -C "$p" init -q
 printf '.agents/\n!.agents/PROJECT_MEMORY.md\n' > "$p/.gitignore"
 expect "cannot reinclude a file under an ignored parent" 1 "must be versioned"
 
-p="$(fixture)"; git -C "$p" init -q
+p="$(fixture)"
+git -C "$p" init -q
 git -C "$p" add AGENTS.md .agents
 printf '*.md\n' > "$p/.gitignore"
 expect "tracked files still checked for ignore rules" 1 "must be versioned"
 
-p="$(fixture)"; git -C "$p" init -q
+p="$(fixture)"
+git -C "$p" init -q
 printf '*.md\n' > "$p/.agents/.gitignore"
 expect "nested ignore rules are checked" 1 "must be versioned"
 
-p="$(fixture)"; git -C "$p" init -q
+p="$(fixture)"
+git -C "$p" init -q
 printf '.agents/\n' >> "$p/.git/info/exclude"
 expect "git info exclude is checked" 1 "must be versioned"
 
@@ -204,7 +221,8 @@ skill_fixture() {
 p="$(skill_fixture)"
 expect "shipped skill index and frontmatter pass" 0 "passed with 0 warning"
 
-p="$(skill_fixture)"; rm "$p/.agents/skills/README.md"
+p="$(skill_fixture)"
+rm "$p/.agents/skills/README.md"
 expect "installed skills require an index" 1 "regular non-symlink index"
 
 p="$(skill_fixture)"
@@ -259,7 +277,8 @@ expect "optional structured metadata allowed" 0 "passed with 0 warning"
 
 for ignored in .agents/BOOTSTRAP.md .agents/TEMPLATE_ORIGIN .agents/skills/README.md \
   .agents/skills/debugging/SKILL.md .agents/skills/debugging/scripts/helper.sh; do
-  p="$(skill_fixture)"; git -C "$p" init -q
+  p="$(skill_fixture)"
+  git -C "$p" init -q
   mkdir -p "$p/.agents/skills/debugging/scripts"
   printf 'Bootstrap fixture\n' > "$p/.agents/BOOTSTRAP.md"
   printf 'template-origin-v1\nrevision\tunknown\n' > "$p/.agents/TEMPLATE_ORIGIN"
@@ -289,7 +308,8 @@ for template in PROJECT_MEMORY.md AGENTS.project.md; do
   ' "$ROOT/templates/$template")
 done
 
-p="$(fixture)"; : > "$p/.agents/PROJECT_MEMORY.md"
+p="$(fixture)"
+: > "$p/.agents/PROJECT_MEMORY.md"
 expect "empty memory fails" 1 "no project facts"
 
 p="$(fixture)"
@@ -300,42 +320,63 @@ p="$(fixture)"
 printf '\n## Domain language\n\n| Term | Meaning |\n| --- | --- |\n| widget | Durable unit. |' >> "$p/.agents/PROJECT_MEMORY.md"
 expect "populated memory table passes without newline" 0 "passed with 0 warning"
 
-p="$(fixture)"; printf -- '- Purpose:\n' >> "$p/AGENTS.md"
+p="$(fixture)"
+printf -- '- Purpose:\n' >> "$p/AGENTS.md"
 expect "unfilled template placeholder" 1 "empty placeholders"
 
-p="$(fixture)"; printf -- '- %s\n' "$(head -c 1300 /dev/zero | tr '\0' 'x')" >> "$p/.agents/PROJECT_MEMORY.md"
+p="$(fixture)"
+printf -- '- %s\n' "$(head -c 1300 /dev/zero | tr '\0' 'x')" >> "$p/.agents/PROJECT_MEMORY.md"
 expect "entry over the hard limit" 1 "over 1200 chars"
 
-p="$(fixture)"; printf -- '- %s\n' "$(head -c 500 /dev/zero | tr '\0' 'x')" >> "$p/.agents/PROJECT_MEMORY.md"
+p="$(fixture)"
+printf -- '- %s\n' "$(head -c 500 /dev/zero | tr '\0' 'x')" >> "$p/.agents/PROJECT_MEMORY.md"
 expect "entry over the soft limit warns" 0 "over 400 chars"
 
-p="$(fixture)"; printf -- '- [Ghost](decisions/002-ghost.md)\n' >> "$p/.agents/PROJECT_MEMORY.md"
+p="$(fixture)"
+printf -- '- [Ghost](decisions/002-ghost.md)\n' >> "$p/.agents/PROJECT_MEMORY.md"
 expect "memory links a missing record" 1 "do not exist"
 
-p="$(fixture)"; printf -- '- Status: accepted\n' > "$p/.agents/decisions/002-orphan.md"
+p="$(fixture)"
+printf -- '- Status: accepted\n' > "$p/.agents/decisions/002-orphan.md"
 expect "record nobody references" 0 "never referenced"
 
-p="$(fixture)"; sed -i '/^- Status:/d' "$p/.agents/decisions/001-only-one.md"
+p="$(fixture)"
+sed -i '/^- Status:/d' "$p/.agents/decisions/001-only-one.md"
 expect "record without a Status" 0 "no Status line"
 
 p="$(fixture)"
 printf '# Decision\n\n- Status: accepted' > "$p/.agents/decisions/001-only-one.md"
 expect "record without a Date (no newline)" 0 "no Date line"
 
-p="$(fixture)"; sed -i 's/^Verificado.*/12 tests green, no date./' "$p/.agents/PROJECT_MEMORY.md"
+# ⚠️ The field IS there, in bold. Reporting it as missing sends the reader to
+# research a date that is already written — eight records once cost exactly
+# that detour. The finding has to name the drift, not invent an absence.
+p="$(fixture)"
+printf '# Decision\n\n- **Date:** 2026-01-01\n- **Status:** accepted\n' \
+  > "$p/.agents/decisions/001-only-one.md"
+expect "record whose header drifted to bold" 0 "writes Status another way"
+
+p="$(fixture)"
+printf '# Decision\n\n- **Date:** 2026-01-01\n- **Status:** accepted\n' \
+  > "$p/.agents/decisions/001-only-one.md"
+expect "drifted header is not called missing" 0 "writes Date another way"
+
+p="$(fixture)"
+sed -i 's/^Verificado.*/12 tests green, no date./' "$p/.agents/PROJECT_MEMORY.md"
 expect "test baseline without a date" 0 "without a verification date"
 
-p="$(fixture)"; printf -- 'api_key = "hunter2hunter2"\n' >> "$p/.agents/PROJECT_MEMORY.md"
+p="$(fixture)"
+printf -- 'api_key = "hunter2hunter2"\n' >> "$p/.agents/PROJECT_MEMORY.md"
 expect "credential in the memory" 1 "possible credential"
 
 p="$(fixture)"
-cat >> "$p/.agents/PROJECT_MEMORY.md" <<'ENTRY'
+cat >> "$p/.agents/PROJECT_MEMORY.md" << 'ENTRY'
 - The list has a filter popover, a sort popover, hover quick actions on each row, an avatar checkbox for multi-select, a chip on every card and a button in the footer.
 ENTRY
 expect "entry that is UI inventory" 0 "feature inventory"
 
 p="$(fixture)"
-cat >> "$p/.agents/PROJECT_MEMORY.md" <<'ENTRY'
+cat >> "$p/.agents/PROJECT_MEMORY.md" << 'ENTRY'
 - Never do network I/O while holding the DB lock; every batch op refuses a mix of accounts before touching the cache.
 ENTRY
 expect "invariant is not mistaken for inventory" 0 "passed with 0 warning"
@@ -345,7 +386,8 @@ printf -- '- %s\n' "$(head -c 200 /dev/zero | tr '\0' 'x')" >> "$p/.agents/PROJE
 CASES=$((CASES + 1))
 # Captured, not piped: check.sh exits 1 here, and under `pipefail` a pipeline
 # would carry that exit code even when grep matched.
-out="$(MEM_FAIL=100 "$ROOT/check.sh" "$WORK/p" 2>&1)"; code=$?
+out="$(MEM_FAIL=100 "$ROOT/check.sh" "$WORK/p" 2>&1)"
+code=$?
 if [ "$code" -eq 1 ] && printf '%s' "$out" | grep -qF "over 100 chars"; then
   printf '  ok    %s\n' "threshold honours MEM_FAIL"
 else

@@ -10,6 +10,10 @@ cp "$ROOT/adopt.sh" "$ROOT/wire.sh" "$TMP/source/"
 cp "$ROOT/templates/AGENTS.project.md" "$ROOT/templates/PROJECT_MEMORY.md" "$TMP/source/templates/"
 # A deliberately small fixture; not a replacement for the shipped template.
 printf '# Bootstrap fixture\n' > "$TMP/source/templates/BOOTSTRAP.md"
+# The workflow fixture carries the placeholder because one assertion below is
+# that adoption replaces it with the revision it copied from.
+printf 'ref: REPLACE_WITH_THE_ADOPTED_COMMIT\n' \
+  > "$TMP/source/templates/agent-policy.yml"
 SRC="$TMP/source"
 mkdir -p "$SRC/templates/skills"
 printf '# Skill fixtures\n' > "$SRC/templates/skills/README.md"
@@ -22,12 +26,29 @@ for skill in "${fixture_skills[@]}"; do
   fixture_skill_files+=("skills/$skill/SKILL.md")
 done
 PROJECT="$TMP/project with spaces"
-fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
+fail() {
+  printf 'FAIL: %s\n' "$*" >&2
+  exit 1
+}
 pass() { printf 'PASS: %s\n' "$*"; }
 ln -s missing "$PROJECT/AGENTS.md"
 bash "$SRC/adopt.sh" "$PROJECT" > "$TMP/log" 2>&1
 [[ -L "$PROJECT/AGENTS.md" && ! -e "$PROJECT/AGENTS.md" ]] || fail 'broken symlink preserved'
 pass 'adoption preserves broken symlink'
+
+# ⚠️ A policy nobody runs is a policy that drifts, so the workflow is part of
+# adoption — and it is useless pinned at a placeholder: the project's first
+# push would fail on a checkout error instead of on a real finding.
+[ -f "$PROJECT/.github/workflows/agent-policy.yml" ] || fail 'gate workflow not adopted'
+pass 'adoption installs the policy gate'
+# ⚠️ The fixture source is a plain directory, not a repository, so there is no
+# revision to pin with — and THAT is the case worth asserting here: with nothing
+# to pin, the placeholder must survive and go on reading as the instruction it
+# is. A guard that made this assertion conditional would be a test that never
+# runs, which looks exactly like a test that passes.
+grep -q 'REPLACE_WITH_THE_ADOPTED_COMMIT' "$PROJECT/.github/workflows/agent-policy.yml" \
+  || fail 'gate workflow lost its placeholder with no revision to pin'
+pass 'adoption keeps the placeholder when there is no revision'
 mkdir -p "$TMP/outside" "$TMP/unsafe"
 ln -s "$TMP/outside" "$TMP/unsafe/.agents"
 if bash "$SRC/adopt.sh" "$TMP/unsafe" > "$TMP/log" 2>&1; then fail 'symlinked .agents accepted'; fi
@@ -76,7 +97,7 @@ grep -q 'not semantic drift' "$TMP/diff" || fail 'comparison caveat missing'
 grep -q 'No baseline' "$TMP/diff" || fail 'legacy baseline warning missing'
 # Local git blobs provide baselines without any commits or network access.
 git -C "$SRC" init -q
-for file in "$SRC"/templates/*.md; do git -C "$SRC" hash-object -w -- "$file" >/dev/null; done
+for file in "$SRC"/templates/*.md; do git -C "$SRC" hash-object -w -- "$file" > /dev/null; done
 mkdir "$TMP/fresh"
 bash "$SRC/adopt.sh" "$TMP/fresh" > "$TMP/log"
 printf '\nLocal customization\n' >> "$TMP/fresh/AGENTS.md"
@@ -159,7 +180,7 @@ for relative in "${shipped[@]#"$ROOT/templates/"}"; do
   cmp "$ROOT/templates/$relative" "$TMP/shipped-project/.agents/$relative" || fail "shipped template mismatch: $relative"
 done
 bash "$ROOT/template-diff.sh" "$TMP/shipped-project" > "$TMP/diff"
-revision="$(git -C "$ROOT" rev-parse --verify HEAD 2>/dev/null)" || revision=unknown
+revision="$(git -C "$ROOT" rev-parse --verify HEAD 2> /dev/null)" || revision=unknown
 grep -qxF "$(printf 'revision\t%s' "$revision")" "$TMP/shipped-project/.agents/TEMPLATE_ORIGIN" || fail 'source revision mismatch'
 while IFS=$'\t' read -r kind relative source blob; do
   [[ "$kind" = file ]] || continue
@@ -180,25 +201,37 @@ VALIDATE_ROOT="$TMP/validation kit"
 mkdir -p "$VALIDATE_ROOT/bin"
 cp "$ROOT/validate.sh" "$VALIDATE_ROOT/validate.sh"
 export VALIDATE_TRACE="$TMP/validation-trace" FAIL_STAGE=''
-for entry in 'bin/shellcheck:lint' 'test-check.sh:docs' 'test-scripts.sh:scripts' 'check.sh:policy'; do
-  file="${entry%:*}"; stage="${entry#*:}"
+mkdir -p "$VALIDATE_ROOT/node_modules/.bin"
+for entry in 'bin/shellcheck:lint' 'node_modules/.bin/prettier:format' \
+  'node_modules/.bin/markdownlint-cli2:md' 'test-check.sh:docs' \
+  'test-scripts.sh:scripts' 'check.sh:policy'; do
+  file="${entry%:*}"
+  stage="${entry#*:}"
   # shellcheck disable=SC2016
   printf '%s\n' '#!/usr/bin/env bash' "stage=$stage" \
     'printf "%s\\n" "$stage" >> "$VALIDATE_TRACE"' \
     'if [ "$FAIL_STAGE" = "$stage" ]; then exit 23; fi' > "$VALIDATE_ROOT/$file"
   chmod +x "$VALIDATE_ROOT/$file"
 done
-for FAIL_STAGE in '' lint docs scripts policy; do
+for FAIL_STAGE in '' lint format md docs scripts policy; do
   : > "$VALIDATE_TRACE"
   status=0
-  (cd "$TMP"; PATH="$VALIDATE_ROOT/bin:$PATH" bash "$VALIDATE_ROOT/validate.sh") > "$TMP/validate-log" 2>&1 || status=$?
+  (
+    cd "$TMP"
+    PATH="$VALIDATE_ROOT/bin:$PATH" bash "$VALIDATE_ROOT/validate.sh"
+  ) > "$TMP/validate-log" 2>&1 || status=$?
   expected_status=23
   case "$FAIL_STAGE" in
-    '') expected_status=0; expected=$'lint\ndocs\nscripts\npolicy' ;;
+    '')
+      expected_status=0
+      expected=$'lint\nformat\nmd\ndocs\nscripts\npolicy'
+      ;;
     lint) expected=lint ;;
-    docs) expected=$'lint\ndocs' ;;
-    scripts) expected=$'lint\ndocs\nscripts' ;;
-    policy) expected=$'lint\ndocs\nscripts\npolicy' ;;
+    format) expected=$'lint\nformat' ;;
+    md) expected=$'lint\nformat\nmd' ;;
+    docs) expected=$'lint\nformat\nmd\ndocs' ;;
+    scripts) expected=$'lint\nformat\nmd\ndocs\nscripts' ;;
+    policy) expected=$'lint\nformat\nmd\ndocs\nscripts\npolicy' ;;
   esac
   [[ "$status" -eq "$expected_status" ]] || fail "validate exit propagation: $FAIL_STAGE"
   [[ "$(< "$VALIDATE_TRACE")" = "$expected" ]] || fail "validate gate ordering: $FAIL_STAGE"

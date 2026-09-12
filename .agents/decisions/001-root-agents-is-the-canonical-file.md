@@ -7,7 +7,7 @@
 
 ## Context
 
-Every adopted project carries an `AGENTS.md` at its root holding rules for agents working *in that repository*. This repository has an `AGENTS.md` at its root too, but it is a different thing: the canonical personal rules, symlinked into `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md` and the other global tool files.
+Every adopted project carries an `AGENTS.md` at its root holding rules for agents working _in that repository_. This repository has an `AGENTS.md` at its root too, but it is a different thing: the canonical personal rules, symlinked into `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md` and the other global tool files.
 
 So adopting the pattern here collides with itself. The slot the pattern reserves for project instructions is already occupied by a file with a wider audience, and `check.sh` — which assumes an adopted project — reported this repository as broken.
 

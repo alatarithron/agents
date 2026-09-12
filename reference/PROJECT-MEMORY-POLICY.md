@@ -58,6 +58,18 @@ Uma entrada de memória é **um fato com um ponteiro**, não um parágrafo. O li
 
 O motivo é operacional, não estético: uma entrada curta é editável, e uma linha de milhares de caracteres não é. Quando atualizar custa reescrever um bloco enorme, a memória para de ser atualizada e passa a acumular — que é exatamente o que a política proíbe. `check.sh` mede esse limite.
 
+### O modo como isso quebra, com nome e número
+
+⚠️ **A entrada de estado atual é a que cresce por acréscimo.** O padrão é sempre o mesmo: um item chamado `Current state:` / `Estado atual:` que ninguém reescreve, só acrescenta, a cada feature entregue. Cada acréscimo é pequeno e razoável; a soma não é.
+
+Um projeto real deste ecossistema chegou a **uma única linha de 77.609 caracteres** — 59 % de um `PROJECT_MEMORY.md` de 132 KB, com 62 carimbos de data dentro. Era um changelog em prosa, e o Git e os 40 registros de decisão já guardavam a mesma cronologia.
+
+Três coisas que essa falha ensina:
+
+- **Data dentro de uma entrada é sinal de changelog.** Se a frase precisa dizer _quando_, o lugar dela é `decisions/`, não a memória.
+- **O limite de FAIL é rede de segurança, não alvo.** O alvo é ~300 caracteres por entrada. Um projeto que aceita 1.200 está dizendo que quatro vezes o limite é tolerável, e foi assim que uma entrada passou dos setenta mil sem que nada reclamasse.
+- **Antes de apagar, confirme que o fato tem outra casa.** Quase sempre a memória é a _terceira_ cópia — depois do comentário do módulo e do registro de decisão — e é a única que envelhece. Confirmar isso em uma amostra é o que torna a limpeza segura em vez de corajosa.
+
 ## O que não registrar
 
 Não registrar:
@@ -109,6 +121,14 @@ Sem isso, quem abrir o relatório meses depois reabre um achado que já foi reso
 - Preservar o histórico por meio do Git, em vez de manter seções como “antigo” ou “alterado em”.
 - Revisar a memória durante mudanças arquiteturais, de ambiente, ferramentas ou fluxo de validação.
 - Manter o arquivo principal curto e navegável; mover explicações longas para `decisions/`.
+
+## O portão
+
+⚠️ **`check.sh` rodado à mão é um check que ninguém lembra.** A política pode estar escrita, o script pode estar certo, e as duas coisas juntas não impedem nada se a falha só aparece quando alguém resolve olhar. No caso acima o script vinha diagnosticando a linha de 77.609 caracteres corretamente havia quarenta commits — bastava que alguém o executasse.
+
+- O `adopt.sh` instala `.github/workflows/agent-policy.yml`, que roda o check a cada push e a cada PR.
+- O kit entra **fixado num commit**, nunca num branch: o script é a definição do portão, e uma definição que se move por push de outro repositório deixa este vermelho sem nada no histórico daqui que explique.
+- Os limites (`MEM_WARN`, `MEM_FAIL`) ficam **no workflow do projeto**, não nos defaults do kit — é ali que cada projeto declara o quão apertada mantém a própria memória, e afrouxar vira um diff com autor e data.
 
 ## Responsabilidade dos agentes
 

@@ -1,0 +1,3 @@
+# The formatter and the markdown linter are npm tools; this is the only reason
+# this shell-and-markdown kit has a `package.json` at all.
+node_modules

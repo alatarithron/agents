@@ -19,8 +19,8 @@ skills=("${skills[@]%/SKILL.md}")
 skills=("${skills[@]##*/}")
 
 # Preflight every directory we write through before making any changes.
-directories=(.agents .agents/decisions .agents/skills)
-templates=(AGENTS.project.md PROJECT_MEMORY.md BOOTSTRAP.md skills/README.md)
+directories=(.agents .agents/decisions .agents/skills .github .github/workflows)
+templates=(AGENTS.project.md PROJECT_MEMORY.md BOOTSTRAP.md skills/README.md agent-policy.yml)
 for skill in "${skills[@]}"; do
   directories+=(".agents/skills/$skill")
   templates+=("skills/$skill/SKILL.md")
@@ -42,8 +42,8 @@ done
 created_any=0
 records=()
 revision=unknown
-if command -v git >/dev/null 2>&1; then
-  revision="$(git -C "$ROOT" rev-parse --verify HEAD 2>/dev/null)" || revision=unknown
+if command -v git > /dev/null 2>&1; then
+  revision="$(git -C "$ROOT" rev-parse --verify HEAD 2> /dev/null)" || revision=unknown
 fi
 copy() {
   local src="$1" relative="$2" dst="$DEST/$2" blob=unknown
@@ -51,10 +51,13 @@ copy() {
     printf 'SKIP (exists): %s\n' "$dst"
   else
     # noclobber also protects against an object appearing after the check.
-    (set -o noclobber; cat -- "$ROOT/$src" > "$dst")
+    (
+      set -o noclobber
+      cat -- "$ROOT/$src" > "$dst"
+    )
     created_any=1
-    if command -v git >/dev/null 2>&1; then
-      blob="$(git -C "$ROOT" hash-object --no-filters -- "$dst" 2>/dev/null)" || blob=unknown
+    if command -v git > /dev/null 2>&1; then
+      blob="$(git -C "$ROOT" hash-object --no-filters -- "$dst" 2> /dev/null)" || blob=unknown
     fi
     records+=("$(printf 'file\t%s\t%s\t%s' "$relative" "$src" "$blob")")
     printf 'created: %s\n' "$dst"
@@ -78,9 +81,28 @@ copy templates/AGENTS.project.md AGENTS.md
 copy templates/PROJECT_MEMORY.md .agents/PROJECT_MEMORY.md
 copy templates/BOOTSTRAP.md .agents/BOOTSTRAP.md
 copy templates/skills/README.md .agents/skills/README.md
+# ⚠️ The gate, not just the checker. A policy nobody runs is a policy that
+# drifts — see the workflow's own header for what that cost. A project not on
+# GitHub Actions deletes this file and wires the command elsewhere.
+copy templates/agent-policy.yml .github/workflows/agent-policy.yml
 for skill in "${skills[@]}"; do
   copy "templates/skills/$skill/SKILL.md" ".agents/skills/$skill/SKILL.md"
 done
+
+# ⚠️ **The workflow is pinned on the way in.** `adopt.sh` already knows which
+# commit it is copying from — it is the one recorded in TEMPLATE_ORIGIN below —
+# and a project whose first push fails on `ref: REPLACE_WITH_…` learns that the
+# gate is a nuisance before it learns that it is useful. With no revision to
+# pin, the placeholder stays and reads as the instruction it is.
+workflow="$DEST/.github/workflows/agent-policy.yml"
+if [ "$revision" != unknown ] && [ -f "$workflow" ] && [ ! -L "$workflow" ]; then
+  if grep -q 'REPLACE_WITH_THE_ADOPTED_COMMIT' "$workflow"; then
+    tmp="$workflow.adopt.$$"
+    sed "s/REPLACE_WITH_THE_ADOPTED_COMMIT/$revision/" "$workflow" > "$tmp"
+    mv -- "$tmp" "$workflow"
+    printf 'pinned: %s -> %s\n' "$workflow" "$revision"
+  fi
+fi
 
 origin="$DEST/.agents/TEMPLATE_ORIGIN"
 if [ -e "$origin" ] || [ -L "$origin" ]; then
@@ -88,10 +110,13 @@ if [ -e "$origin" ] || [ -L "$origin" ]; then
 elif [ "${#records[@]}" -gt 0 ]; then
   # Inert tab-separated text. Only documents installed by this run are listed.
   # Hashes describe the copied bytes, including uncommitted template changes.
-  (set -o noclobber
-    { printf 'template-origin-v1\nrevision\t%s\n' "$revision"
+  (
+    set -o noclobber
+    {
+      printf 'template-origin-v1\nrevision\t%s\n' "$revision"
       printf '%s\n' "${records[@]}"
-    } > "$origin")
+    } > "$origin"
+  )
   printf 'created: %s\n' "$origin"
 fi
 

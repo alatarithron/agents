@@ -38,7 +38,7 @@ elif [ -f "$HERMES_DIR/SOUL.md" ]; then
   if grep -qF "$CANON" "$HERMES_DIR/SOUL.md"; then
     echo "ok (pointer present): $HERMES_DIR/SOUL.md"
   else
-    printf '\nFollow the user preferences and operating rules in %s. Read that file at the start of any coding or project session.\n' "$CANON" >>"$HERMES_DIR/SOUL.md"
+    printf '\nFollow the user preferences and operating rules in %s. Read that file at the start of any coding or project session.\n' "$CANON" >> "$HERMES_DIR/SOUL.md"
     echo "appended pointer: $HERMES_DIR/SOUL.md"
   fi
 fi
