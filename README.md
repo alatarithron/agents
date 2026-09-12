@@ -47,7 +47,7 @@ agents/
 
 Esse script conecta o `AGENTS.md` canônico deste repositório aos arquivos globais lidos por ferramentas como Claude Code, Codex CLI, Gemini CLI e Hermes.
 
-Os caminhos de `reference/` são relativos ao arquivo canônico real, após resolver symlinks; não ao projeto em edição. `wire.sh` gera os caminhos absolutos locais a partir do clone, sem depender de `Projects` ou `Projetos`. Após mover o clone, execute-o novamente e confira os apontamentos; personas existentes não são migradas automaticamente.
+Os caminhos de `reference/` são relativos ao arquivo canônico real, após resolver symlinks; não ao projeto em edição. `wire.sh` cria symlinks globais para o `AGENTS.md` do clone e, no Hermes, anexa ao `SOUL.md` um ponteiro com esse caminho absoluto, sem depender de `Projects` ou `Projetos`. Após mover o clone, execute-o novamente e confira os apontamentos; personas existentes não são migradas automaticamente.
 
 ### 2. Adoção por projeto
 
